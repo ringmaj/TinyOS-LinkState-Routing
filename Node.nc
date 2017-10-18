@@ -43,8 +43,7 @@ module Node{
    uses interface Timer<TMilli> as periodicTimer;//, randomTimer;	// Interface that was wired in NodeC.nc
    uses interface Timer<TMilli> as randomTimer;
    uses interface CommandHandler;
-
-
+   uses interface Queue<int> as queue;
 
 }
 
@@ -69,12 +68,27 @@ implementation{	// each node's private variables must be declared here, (or it w
    } routing;
 
 
-   // Holds current nodes neighbors
-   typedef struct
+   typedef struct forwardingTable
    {
-     uint16_t neighborArray[2][50];
+     uint16_t to[50];
+     uint16_t next[50];
+
+     // max index number for both arrays
+     // to[0] | next[0]
+     // to[1] | next[1]
+
      uint16_t numNodes;
-   } neighborTable;
+
+   } forwarding;
+
+
+
+
+   // Holds current nodes neighbors, each bit corresponds to a node, 1/0 bit if node is a neighbors
+   // Assume max number of nodes is 50, so 64 bits or 8 bytes can be sent in the payload
+
+   // Holds 64 bits or up to 64 nodes
+   uint16_t neighborBits[4];
 
 
 
@@ -90,6 +104,11 @@ implementation{	// each node's private variables must be declared here, (or it w
    uint16_t mySeqNum = 0;	// counts number of packets created by this node (to keep track of duplicate packets). Is incremented when a new packet is created (with makePack)
 
    // Prototypes
+
+
+
+
+
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
 
     void sendNeighborDiscoverPack() {
@@ -130,11 +149,54 @@ implementation{	// each node's private variables must be declared here, (or it w
 
    }
 
+
+   void updateForwardingTable()
+   {
+
+   /*BFS Psuedocode, since unweighted graph, guarantees all edges are 1
+   Set all nodes to "not visited";
+
+   q = new Queue();
+
+   q.enqueue(initial node);
+
+   while ( q ≠ empty ) do
+   {
+      x = q.dequeue();
+
+      if ( x has not been visited )
+      {
+         visited[x] = true;         // Visit node x !
+
+         for ( every edge (x, y)   we are using all edges !  )
+            if ( y has not been visited )
+	       q.enqueue(y);       // Use the edge (x,y) !!!
+      }*/
+
+
+      // First empty queue
+      while(!(call queue.empty())
+      {
+        call queue.pop();
+      }
+
+
+
+   }
+
+
+
+
+
+   }
+
+
    event void Boot.booted(){
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
 	  //call periodicTimer.fired();
 	  //sendNeighborDiscoverPack();
+
 	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time
 
       dbg(GENERAL_CHANNEL, "Booted\n");
