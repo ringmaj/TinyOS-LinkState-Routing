@@ -16,10 +16,21 @@
 //#include "dataStructures/modules/HashmapC.nc"	// do I need this?
 
 /*
-Protocals:
-protocol == 0: Most packets from point A to point B
-protocol == 1: Neighbor discovery packet
-protocol == 2: Reply to packet. From point B to point A
+
+
+
+
+What Protocol.h specifies:
+PROTOCOL_PING = 0,
+PROTOCOL_PINGREPLY = 1,
+PROTOCOL_LINKEDLIST = 2,
+PROTOCOL_NAME = 3,
+PROTOCOL_TCP= 4,
+PROTOCOL_DV = 5,
+PROTOCOL_CMD = 99
+
+What I specify:
+protocol == 6 : Neighbor discovery packet
 
 */
 
@@ -53,19 +64,13 @@ implementation{	// each node's private variables must be declared here, (or it w
    // Prototypes
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
    
-   event void periodicTimer.fired() {
-	   call randomTimer.startOneShot((call Random.rand32())%200);
-   }
-   
-    void neighborDiscover() {
+    void sendNeighborDiscoverPack() {
 		char text [] = "hi";	// length is 2 (3 including null char byte '\0' at end)
 		
 		//reset the list to empty every time neighbor discovery is called, then re-add them to list when they respond
 		top = 0;
-		
-	   dbg(GENERAL_CHANNEL, "Discovering Neighbors. Sending packet: ");
-	   
-	   makePack(&sendPackage, TOS_NODE_ID, TOS_NODE_ID, 1, 1, mySeqNum, text, PACKET_MAX_PAYLOAD_SIZE);
+	   dbg(NEIGHBOR_CHANNEL, "Discovering Neighbors. Sending packet: ");
+	   makePack(&sendPackage, TOS_NODE_ID, TOS_NODE_ID, 1, 6, mySeqNum, text, PACKET_MAX_PAYLOAD_SIZE);
 	   logPack(&sendPackage);
 	   call Sender.send(sendPackage, AM_BROADCAST_ADDR);
 	   sentPacks[packsSent%50] = (((sendPackage.seq) << 16) | sendPackage.src);	// keep track of all packs send so as not to send them twice
@@ -75,10 +80,19 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   // Maybe the neighbors can just send it only back to the source instead of to AM_BROADCAST_ADDR to all?
    }
    
+   void printNeighbors () {
+	   int i;	   
+	   dbg (NEIGHBOR_CHANNEL, "My %hhu neighbor(s) are:\n", top);
+	   
+	   for (i = 0; i < top; i++) {
+		   dbg (NEIGHBOR_CHANNEL, "%hhu\n", neighbors[i]);
+	   }
+   }
+   
    void reply (uint16_t to) {
 	   char text [] = "got it!\n";
 	   
-	   makePack(&sendPackage, TOS_NODE_ID, to, 21, 3, mySeqNum, text, PACKET_MAX_PAYLOAD_SIZE);
+	   makePack(&sendPackage, TOS_NODE_ID, to, 21, PROTOCOL_PINGREPLY, mySeqNum, text, PACKET_MAX_PAYLOAD_SIZE);
 	   dbg(GENERAL_CHANNEL, "Sending reply to %hhu", to);
 	   logPack(&sendPackage);
 	   call Sender.send(sendPackage, AM_BROADCAST_ADDR);
@@ -89,30 +103,22 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
    
    event void Boot.booted(){
-	  int i;
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
 	  //call periodicTimer.fired();
-	  //neighborDiscover();
-	  call randomTimer.startOneShot((call Random.rand32())%600);
-	  dbg (GENERAL_CHANNEL, "My %hhu neighbors are:\n", top);
-	  for (i = 0; i < top; i++) {
-		dbg (GENERAL_CHANNEL, "%hhu\n", neighbors[i]);
-	  }
+	  //sendNeighborDiscoverPack();
+	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time
+	  
       dbg(GENERAL_CHANNEL, "Booted\n");
    }
    
+   event void periodicTimer.fired() {
+	   //printNeighbors ();
+	   call randomTimer.startOneShot((call Random.rand32())%200);
+   }
+   
    event void randomTimer.fired() {
-	   //int i;
-	   //dbg (GENERAL_CHANNEL, "Random Timer was fired\n");
-	   //*
-	   //dbg (GENERAL_CHANNEL, "My %hhu neighbors are:\n", top);
-	   
-	   //for (i = 0; i < top; i++) {
-		//   dbg (GENERAL_CHANNEL, "%hhu\n", neighbors[i]);
-	   //}
-	   //*/
-	   neighborDiscover();
+	   sendNeighborDiscoverPack();
    }
    
    event void AMControl.startDone(error_t err){
@@ -141,17 +147,17 @@ implementation{	// each node's private variables must be declared here, (or it w
 			 
 			 
 			 //char text [] = "hi";	//"All neighbors, please reply";	// length is 27 (28 including null char byte '\0' at end)	// Network Discovery message
-			 if (myMsg->TTL == 0 && myMsg->protocol == 1 && myMsg->src != TOS_NODE_ID/*&& strncmp(text, payload, 2) == 0*/) {	// Should this also check if a network discovery packet has been sent recently???
+			 if (myMsg->TTL == 0 && myMsg->protocol == 6 && myMsg->src != TOS_NODE_ID/*&& strncmp(text, payload, 2) == 0*/) {	// Should this also check if a network discovery packet has been sent recently???
 				 
 				 // record the neighbor (this packet's sender)
 				 neighbors [top] = myMsg->src;
 				 top++;
-				 //dbg (GENERAL_CHANNEL, "Recieved my own network discovery packet from node %hhu. I now have %hhu neighbors\n", myMsg->src, top);
+				 dbg (NEIGHBOR_CHANNEL, "Recieved my own network discovery packet from node %hhu. I now have %hhu neighbors\n", myMsg->src, top);
 				 
 				 return msg;
 			 } else {
 				 
-				 if (myMsg->protocol == 3) {
+				 if (myMsg->protocol == PROTOCOL_PINGREPLY) {
 					 dbg (GENERAL_CHANNEL, "Recieved a reply to my message!\n");
 					 logPack (myMsg);
 					 return msg;
@@ -171,7 +177,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 			 
 			 // check if it's another node's network discovery packet
 			 if (myMsg->src == myMsg->dest) {	// if source == destination, then it's a network discovery packet
-				 //dbg (GENERAL_CHANNEL, "Recieved someone else's neighbor discovery packet. Sending it back to them\n");
+				 dbg (NEIGHBOR_CHANNEL, "Recieved someone else's neighbor discovery packet. Sending it back to them\n");
 				 myMsg->src = TOS_NODE_ID;	// set souce of network discovery packets to current node
 				 call Sender.send(*myMsg, myMsg->dest);	// send it back to the sender
 				 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
@@ -193,10 +199,6 @@ implementation{	// each node's private variables must be declared here, (or it w
 			 }
 			 
 			 dbg (GENERAL_CHANNEL, "It's not for me. forwarding it on\n");
-			 
-			 
-			 
-			 
 			 //**************************************************************8
 			 // Should this store an array of last "top" (number of neighbors) amount of packets stored, to tell when one of them was sent back to previous node again????? That way packets won't go back and forth?????
 			 call Sender.send(*myMsg, AM_BROADCAST_ADDR);
@@ -220,7 +222,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "\nPINGING:\t\t");
-      makePack(&sendPackage, TOS_NODE_ID, destination, 21, 0, mySeqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&sendPackage, TOS_NODE_ID, destination, 21, PROTOCOL_PING, mySeqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
 	  logPack(&sendPackage);	// just prints out package's info & payload
 	  //dbg(GENERAL_CHANNEL, "Pinging payload ", payload, " from ", TOS_NODE_ID, " to ", destination, "\n");
       dbg(GENERAL_CHANNEL, "\n");
@@ -243,15 +245,7 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
    event void CommandHandler.printNeighbors(){
-	   int i;
-	   /*IS THE NEIGHBOR DISCOVERY SUPPOSED TO BE HERE????? OR IN A TIMER EVENT THAT RUNS EVERY 1-2 MIINUTES, RANDOMIZED SO TIMERS DON'T CHECK AT SAME TIME*/
-	   
-	   dbg (GENERAL_CHANNEL, "My %hhu neighbors are:\n", top);
-	   
-	   for (i = 0; i < top; i++) {
-		   dbg (GENERAL_CHANNEL, "%hhu\n", neighbors[i]);
-	   }
-	   
+	   printNeighbors ();	   
    }
 
    event void CommandHandler.printRouteTable(){}
@@ -276,9 +270,4 @@ implementation{	// each node's private variables must be declared here, (or it w
       Package->protocol = protocol;
       memcpy(Package->payload, payload, length);
    }
-   
-   
-
-   
-   
 }
