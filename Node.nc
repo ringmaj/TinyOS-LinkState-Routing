@@ -61,25 +61,25 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
    // Holds current nodes understanding of entire network topology
-   typedef struct routingTable
-   {
-     uint16_t neighborArray[50][50];
-     uint16_t numNodes;
-   } routing;
+   //typedef struct routingTable
+   //{
+     uint8_t routingTableNeighborArray[PACKET_MAX_PAYLOAD_SIZE * 8][PACKET_MAX_PAYLOAD_SIZE * 8];
+     uint16_t routingTableNumNodes;
+   //} routing;
 
 
-   typedef struct forwardingTable
-   {
-     uint16_t to[50];
-     uint16_t next[50];
+   //typedef struct forwardingTable
+   //{
+     uint16_t forwardingTableTo[50];
+     uint16_t forwardingTableNext[50];
 
      // max index number for both arrays
      // to[0] | next[0]
      // to[1] | next[1]
 
-     uint16_t numNodes;
+     uint16_t forwardingTableNumNodes;
 
-   } forwarding;
+   //} forwarding;
 
 
 
@@ -88,7 +88,7 @@ implementation{	// each node's private variables must be declared here, (or it w
    // Assume max number of nodes is 50, so 64 bits or 8 bytes can be sent in the payload
 
    // Holds 64 bits or up to 64 nodes
-   uint16_t neighborBits[4];
+   //uint16_t neighborBits[4];
 
 
 
@@ -107,22 +107,26 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 	// Sets the (shiftFromFront)th bit from left, in array "data", to valToSetTo (0 or 1)
 	int setBit (uint8_t * data, int shiftFromFront, uint8_t valToSetTo) {
-		uint8_t index = shiftFromFront / 8;	// index of byte in data[] array
-		uint8_t offset = shiftFromFront % 8;; // index of bit in byte to set
-		uint8_t mask = (0b10000000) >> offset;
-		
+		uint8_t ind;
+		uint8_t offset;
+		uint8_t mask;
+
+		ind = shiftFromFront / 8;	// index of byte in data[] array
+		offset = shiftFromFront % 8;; // index of bit in byte to set
+		mask = (0b10000000) >> offset;
+
 		//dbg (GENERAL_CHANNEL, "setBit was called\n");
 		if (!(valToSetTo == 0 || valToSetTo == 1)) {
 			printf ("setBit error: setBit can only set a bit to 0 or 1\n");
 			return 0;
 		}
-		
+
 		if (valToSetTo == 1) {
 			// sets the bit to 1
-			data[index] = data[index]| mask;	// The operation (data[index] & (~mask)) will clear the "offset"th bit in "index"th byte, setting it to 0. Then  (_ | mask) sets it to 0 or 1, depending on what the mask bit is
+			data[ind] = data[ind]| mask;	// The operation (data[ind] & (~mask)) will clear the "offset"th bit in "ind"th byte, setting it to 0. Then  (_ | mask) sets it to 0 or 1, depending on what the mask bit is
 		} else {
 			// sets the bit to 0
-			data[index] = data[index] & (~mask);
+			data[ind] = data[ind] & (~mask);
 		}
 		// returns 1 if it set it successfully, 0 otherwise.
 		return 1;
@@ -130,10 +134,16 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 	// Sets the (shiftFromFront)th bit from left, in array "data", to valToSetTo (0 or 1)
 	int getBit (uint8_t * data, int shiftFromFront) {
-		uint8_t index = shiftFromFront / 8;	// index of byte in data[] array
-		uint8_t offset = shiftFromFront % 8;; // index of bit in byte to set
-		uint8_t mask = (0b10000000) >> offset;
-		uint8_t bit = data[index] & mask;
+		uint8_t ind;
+		uint8_t offset;
+		uint8_t mask;
+		uint8_t bit;
+
+		ind = shiftFromFront / 8;	// index of byte in data[] array
+		offset = shiftFromFront % 8;; // index of bit in byte to set
+		mask = (0b10000000) >> offset;
+		bit = data[ind] & mask;
+
 		if (bit) {
 			return 1;
 		} else {
@@ -147,12 +157,12 @@ implementation{	// each node's private variables must be declared here, (or it w
 		int i;
 		//dbg (GENERAL_CHANNEL, "address of writeTo is: %p\n", writeTo);
 		//writes the Link State packet in bit format from the neighbors array format (like an array used as a stack)
-		
+
 		// initialize LSP to all 0's
 		for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE; i++) {
 			writeTo[i] = 0;
 		}
-		
+
 		// read the uint16_t neighbors [50] array and write it to the LSP
 		for (i = 0; i < top; i++) {
 			// Sets the bit in writeTo, that corresponds to the NodeID of the neighbor, to 1.
@@ -163,12 +173,12 @@ implementation{	// each node's private variables must be declared here, (or it w
 			//next bit right corresponds to whether or not the node with and ID of 2 is a neighbor.
 			//and so on... to the 160th bit, which corresponds to whether or not the node with an ID of 159 is a neighbor
 			//The limitation of this system is that the LSP payload can only deal with node ID's from 0 to 159 (inclusive). 0 <= nodeID <= 159
-			
+
 			// sets a bit in writeTo[], at the position if the node ID (from neighbors[i]), to 1 to indicate that the neighbor is included
 			setBit(writeTo, neighbors[i], 1);
 		}
-		
-		
+
+
 	}
 
 	int readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom) {
@@ -227,77 +237,69 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
    void updateForwardingTable()
+ {
+   //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
+
+    /*
+    Requirements
+    1. Adjacency list
+    2. Visited Table (T/F)
+    3. Previous list
+    */
+
+    uint16_t v;
+    uint16_t source_index;
+
+    // Array to hold previous values so the path can be traced
+    uint16_t prev[50];
+
+    // Arrays to hold visited nodes and their boolean values
+    uint16_t visited_node[50];
+    bool visited_bool[50];
+
+    // node 1 | TRUE
+    // node 2 | FALSE
+    // ...
+
+
+   // initialize all visited table values to FALSE
+   int i;
+   for(i = 0; i < 50; i++)
    {
+     visited_bool[i] = FALSE;
+   }
 
-  //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
-
-      /*
-      Requirements
-      1. Adjacency list
-      2. Visited Table (T/F)
-      3. Previous list
-      */
-
-      uint16_t v;
-      uint16_t source_index;
-
-      // Array to hold previous values so the path can be traced
-      uint16_t prev[50];
-
-      // Arrays to hold visited nodes and their boolean values
-      uint16_t visited_node[50];
-      bool visited_bool[50];
-
-      // node 1 | TRUE
-      // node 2 | FALSE
-      // ...
+   // initialize all prev table values to -1 since no nodes have been visited yet
+   for(i = 0; i < 50; i++)
+   {
+     prev[i] = -1;
+   }
 
 
-     // initialize all visited table values to FALSE
-     int i;
-     for(i = 0; i < 50; i++)
-     {
-       visited_bool[i] = FALSE;
-     }
+      // Begin algorithm
+      //-----------------------------------------------------------------------------------
 
-     // initialize all prev table values to -1 since no nodes have been visited yet
-     for(i = 0; i < 50; i++)
-     {
-       prev[i] = -1;
-     }
+      // Empty queue First
+      while(!(call q.empty()))
+      {
+        call q.dequeue();
+      }
 
+      // index for source node from visited table, already visited source
 
-     // Begin algorithm
-     /*for each w adjacent to v
-        if (flag[w] = false) {
-          flag[w] = true;
-          prev[w] = v; // visited w right after v
-          enqueue(w);
-        }*/
+      source_index = TOS_NODE_ID - 1;
+      visited_bool[source_index] = TRUE;
 
-        //-----------------------------------------------------------------------------------
-
-        // Empty queue First
-        while(!(call q.empty()))
-        {
-          call q.dequeue();
-        }
-
-        // index for source node from visited table, already visited source
-
-        source_index = TOS_NODE_ID - 1;
-        visited_bool[source_index] = TRUE;
-
-        call q.enqueue(TOS_NODE_ID);
+      call q.enqueue(TOS_NODE_ID);
 
         while(!(call q.empty()))
         {
           v = call q.dequeue();
 
-
           for(i = 0; i < 50; i++)
             {
-              if(routing.neighborArray[i][TOS_NODE_ID] == 1)
+              /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
+              if(routingTableNeighborArray[i][TOS_NODE_ID] == 1)
                 {
                     if(visited_bool[i] == FALSE)
                     {
@@ -306,19 +308,9 @@ implementation{	// each node's private variables must be declared here, (or it w
                       call q.enqueue(i);
                     }
                 }
-
-
             }
-
         }
-
-
-
-
-
-
-
-   }
+ }
 
 
 
@@ -328,11 +320,18 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
    event void Boot.booted(){
+	  int i;
+	  int j;
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
 	  //call periodicTimer.fired();
 	  //sendNeighborDiscoverPack();
-
+	  for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE * 8; i++) {
+		  for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
+			  routingTableNeighborArray [i][j] = 0;
+		  }
+	  }
+	  routingTableNumNodes = 0;
 	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time
 
       dbg(GENERAL_CHANNEL, "Booted\n");
