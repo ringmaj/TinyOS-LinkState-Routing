@@ -153,12 +153,17 @@ implementation{	// each node's private variables must be declared here, (or it w
    void updateForwardingTable()
    {
 
+  //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
+
       /*
       Requirements
       1. Adjacency list
       2. Visited Table (T/F)
       3. Previous list
       */
+
+      uint16_t v;
+      uint16_t source_index;
 
       // Array to hold previous values so the path can be traced
       uint16_t prev[50];
@@ -172,22 +177,67 @@ implementation{	// each node's private variables must be declared here, (or it w
       // ...
 
 
+     // initialize all visited table values to FALSE
+     int i;
+     for(i = 0; i < 50; i++)
+     {
+       visited_bool[i] = FALSE;
+     }
+
+     // initialize all prev table values to -1 since no nodes have been visited yet
+     for(i = 0; i < 50; i++)
+     {
+       prev[i] = -1;
+     }
 
 
-      // First empty queue
-      while(!(call q.empty()))
-      {
-        call q.head();
-      }
+     // Begin algorithm
+     /*for each w adjacent to v
+        if (flag[w] = false) {
+          flag[w] = true;
+          prev[w] = v; // visited w right after v
+          enqueue(w);
+        }*/
 
-      call q.enqueue(TOS_NODE_ID);
+        //-----------------------------------------------------------------------------------
 
-      /*while(!(call q.empty()))
-      {
-        x = q.dequeue();
+        // Empty queue First
+        while(!(call q.empty()))
+        {
+          call q.dequeue();
+        }
 
-        if()
-      }*/
+        // index for source node from visited table, already visited source
+
+        source_index = TOS_NODE_ID - 1;
+        visited_bool[source_index] = TRUE;
+
+        call q.enqueue(TOS_NODE_ID);
+
+        while(!(call q.empty()))
+        {
+          v = call q.dequeue();
+
+
+          for(i = 0; i < 50; i++)
+            {
+              if(routing.neighborArray[i][TOS_NODE_ID] == 1)
+                {
+                    if(visited_bool[i] == FALSE)
+                    {
+                      visited_bool[i] == TRUE;
+                      prev[i] = v;
+                      call q.enqueue(i);
+                    }
+                }
+
+
+            }
+
+        }
+
+
+
 
 
 
