@@ -247,15 +247,83 @@ implementation{	// each node's private variables must be declared here, (or it w
     3. Previous list
     */
 
+
+
     uint16_t v;
     uint16_t source_index;
+    int i;
 
-    // Array to hold previous values so the path can be traced
-    uint16_t prev[50];
 
-    // Arrays to hold visited nodes and their boolean values
-    uint16_t visited_node[50];
-    bool visited_bool[50];
+
+    int r;
+    int t;
+
+
+        // Array to hold previous values so the path can be traced
+        uint16_t prev[10];
+
+
+
+        // Arrays to hold visited nodes and their boolean values
+        uint16_t visited_node[10];
+        bool visited_bool[10];
+        uint16_t testList[10][10];
+
+
+        for(i = 0; i < 10; i++)
+          {
+            prev[i] = -1;
+            visited_bool[i] = FALSE;
+            visited_node[i] = 0;
+
+          }
+
+
+    for(r = 0; r < 10; r++)
+    {
+      for(t = 0; t < 10; t++)
+      {
+        testList[r][t] = 0;
+      }
+    }
+
+    testList[0][8] = 1;
+
+    testList[1][2] = 1;
+    testList[1][3] = 1;
+    testList[1][7] = 1;
+    testList[1][9] = 1;
+
+    testList[2][1] = 1;
+    testList[2][4] = 1;
+    testList[2][8] = 1;
+
+    testList[3][1] = 1;
+    testList[3][4] = 1;
+    testList[3][5] = 1;
+
+    testList[4][2] = 1;
+    testList[4][3] = 1;
+
+    testList[5][3] = 1;
+    testList[5][6] = 1;
+
+    testList[6][5] = 1;
+    testList[6][7] = 1;
+
+    testList[7][1] = 1;
+    testList[7][6] = 1;
+
+    testList[8][0] = 1;
+    testList[8][9] = 1;
+    testList[8][2] = 1;
+
+    testList[9][1] = 1;
+    testList[9][8] = 1;
+
+
+
+
 
     // node 1 | TRUE
     // node 2 | FALSE
@@ -263,14 +331,14 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
    // initialize all visited table values to FALSE
-   int i;
-   for(i = 0; i < 50; i++)
+
+   for(i = 0; i < 10; i++)
    {
      visited_bool[i] = FALSE;
    }
 
    // initialize all prev table values to -1 since no nodes have been visited yet
-   for(i = 0; i < 50; i++)
+   for(i = 0; i < 10; i++)
    {
      prev[i] = -1;
    }
@@ -287,29 +355,53 @@ implementation{	// each node's private variables must be declared here, (or it w
 
       // index for source node from visited table, already visited source
 
-      source_index = TOS_NODE_ID - 1;
+      source_index = 2 ;
       visited_bool[source_index] = TRUE;
 
-      call q.enqueue(TOS_NODE_ID);
+      call q.enqueue(2);
+
+
+      dbg(GENERAL_CHANNEL, "BEFORE WHILE");
 
         while(!(call q.empty()))
         {
-          v = call q.dequeue();
 
-          for(i = 0; i < 50; i++)
+          v = call q.dequeue();
+          dbg(GENERAL_CHANNEL, "IN WHILE");
+
+          for(i = 0; i < 10; i++)
             {
+
               /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
-              if(routingTableNeighborArray[i][TOS_NODE_ID] == 1)
+              if(testList[i][v] == 1)
                 {
                     if(visited_bool[i] == FALSE)
                     {
-                      visited_bool[i] == TRUE;
+                      visited_bool[i] = TRUE;
                       prev[i] = v;
+                      /*dbg(ROUTING_CHANNEL, "Prev[8] = %hhu\n", prev[8] );*/
+
+
                       call q.enqueue(i);
                     }
                 }
             }
         }
+
+
+// Now our prev array should be complete, we need to traverse this array in order to find the shortest path and the next hop
+// prev[w] = v, w comes after v
+
+
+
+dbg(ROUTING_CHANNEL, "Prev[7] = %hhu\n", prev[7] );
+
+
+
+// Algorithm complete: now traverse backwards to find next hop
+
+
+
  }
 
 
@@ -322,6 +414,9 @@ implementation{	// each node's private variables must be declared here, (or it w
    event void Boot.booted(){
 	  int i;
 	  int j;
+
+    updateForwardingTable();
+
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
 	  //call periodicTimer.fired();
