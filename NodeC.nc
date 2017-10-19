@@ -41,4 +41,7 @@ implementation {
 
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
+	
+	components new QueueC(uint16_t, 20);
+	Node.q -> QueueC;
 }
