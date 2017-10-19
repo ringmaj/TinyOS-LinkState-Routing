@@ -221,6 +221,13 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   // Maybe the neighbors can just send it only back to the source instead of to AM_BROADCAST_ADDR to all?
    }
 
+   void sendLSP () {
+		uint8_t data [PACKET_MAX_PAYLOAD_SIZE];
+		writeLinkStatePack (data);
+		makePack(&sendPackage, TOS_NODE_ID, 0, 21, PROTOCOL_LINKEDSTATE, mySeqNum, data, PACKET_MAX_PAYLOAD_SIZE);
+		call Sender.send(sendPackage, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for flooding and neighbor discovery
+   }
+
    void printNeighbors () {
 	   int i;
 	   dbg (NEIGHBOR_CHANNEL, "My %hhu neighbor(s) are:\n", top);
@@ -245,218 +252,218 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
 
+
    void updateForwardingTable()
-{
- //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
+  {
+   //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
 
-  /*
-  Requirements
-  1. Adjacency list
-  2. Visited Table (T/F)
-  3. Previous list
-  */
-
-
-
-  uint16_t v;
-  uint16_t source_index;
-  uint16_t nextHop;
-  int i;
-  int j;
-  int saveJ;
+    /*
+    Requirements
+    1. Adjacency list
+    2. Visited Table (T/F)
+    3. Previous list
+    */
 
 
 
-  int r;
-  int t;
+    uint16_t v;
+    uint16_t source_index;
+    uint16_t nextHop;
+    int i;
+    int j;
+    int saveJ;
 
 
-      // Array to hold previous values so the path can be traced
-      uint16_t prev[10];
+
+    int r;
+    int t;
+
+
+        // Array to hold previous values so the path can be traced
+        uint16_t prev[160];
 
 
 
-      // Arrays to hold visited nodes and their boolean values
-      uint16_t visited_node[10];
-      bool visited_bool[10];
-      uint16_t testList[10][10];
+        // Arrays to hold visited nodes and their boolean values
+        uint16_t visited_node[160];
+        bool visited_bool[16];
+        uint16_t testList[160][160];
 
 
-      for(i = 0; i < 10; i++)
+        for(i = 0; i < 160; i++)
+          {
+            prev[i] = -1;
+            visited_bool[i] = FALSE;
+            visited_node[i] = 0;
+
+          }
+
+
+    for(r = 0; r < 160; r++)
+    {
+      for(t = 0; t < 160; t++)
+      {
+        testList[r][t] = 0;
+      }
+    }
+
+    testList[0][8] = 1;
+
+    testList[1][2] = 1;
+    testList[1][3] = 1;
+    testList[1][7] = 1;
+    testList[1][9] = 1;
+
+    testList[2][1] = 1;
+    testList[2][4] = 1;
+    testList[2][8] = 1;
+
+    testList[3][1] = 1;
+    testList[3][4] = 1;
+    testList[3][5] = 1;
+
+    testList[4][2] = 1;
+    testList[4][3] = 1;
+
+    testList[5][3] = 1;
+    testList[5][6] = 1;
+
+    testList[6][5] = 1;
+    testList[6][7] = 1;
+
+    testList[7][1] = 1;
+    testList[7][6] = 1;
+
+    testList[8][0] = 1;
+    testList[8][9] = 1;
+    testList[8][2] = 1;
+
+    testList[9][1] = 1;
+    testList[9][8] = 1;
+
+
+
+
+
+    // node 1 | TRUE
+    // node 2 | FALSE
+    // ...
+
+
+   // initialize all visited table values to FALSE
+
+   for(i = 0; i < 160; i++)
+   {
+     visited_bool[i] = FALSE;
+   }
+
+   // initialize all prev table values to -1 since no nodes have been visited yet
+   for(i = 0; i < 160; i++)
+   {
+     prev[i] = -1;
+   }
+
+
+      // Begin algorithm
+      //-----------------------------------------------------------------------------------
+
+      // Empty queue First
+      while(!(call q.empty()))
+      {
+        call q.dequeue();
+      }
+
+      // index for source node from visited table, already visited source
+
+      source_index = TOS_NODE_ID - 1 ;
+      visited_bool[source_index] = TRUE;
+
+      call q.enqueue(TOS_NODE_ID);
+
+
+      dbg(GENERAL_CHANNEL, "BEFORE WHILE");
+
+        while(!(call q.empty()))
         {
-          prev[i] = -1;
-          visited_bool[i] = FALSE;
-          visited_node[i] = 0;
 
+          v = call q.dequeue();
+          dbg(GENERAL_CHANNEL, "IN WHILE");
+
+          for(i = 0; i < 160; i++)
+            {
+
+              /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
+              if(routingTableNeighborArray[i][v] == 1)
+                {
+                    if(visited_bool[i] == FALSE)
+                    {
+                      visited_bool[i] = TRUE;
+                      prev[i] = v;
+
+
+
+
+
+                      /*dbg(ROUTING_CHANNEL, "Prev[8] = %hhu\n", prev[8] );*/
+
+
+                      call q.enqueue(i);
+                    }
+                }
+            }
         }
 
 
-  for(r = 0; r < 10; r++)
+  // Now our prev array should be complete, we need to traverse this array in order to find the shortest path and the next hop
+  // prev[w] = v, w comes after v
+
+
+
+  /*dbg(ROUTING_CHANNEL, "Prev[0] = %hhu\n", prev[9] );*/
+
+
+
+  // Algorithm complete, now find forwarding table next values
+
+
+  /*for(i = 0; i < 10; i++)
   {
-    for(t = 0; t < 10; t++)
-    {
-      testList[r][t] = 0;
-    }
+  dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
+
+  }*/
+
+
+  for(i = 0; i < 160; i++)
+  {
+  j = i;
+  if(j == (TOS_NODE_ID - 1))
+    j++;
+
+  while(prev[j] != (TOS_NODE_ID - 1) && prev[j] != 255)
+  {
+
+    dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j, prev[j] );
+    j = prev[j];
+    //nextHop = prev[j];
+  } // this loop only ends when prev[j] == 2, so j is the next hop
+  nextHop = j;
+  /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
+
+
+  forwardingTableTo[i] = i + 1;
+  forwardingTableNext[i] = nextHop;
+
   }
 
-  testList[0][8] = 1;
+  forwardingTableNext[(TOS_NODE_ID - 1)] = (TOS_NODE_ID - 1);
 
-  testList[1][2] = 1;
-  testList[1][3] = 1;
-  testList[1][7] = 1;
-  testList[1][9] = 1;
+  for(i = 0; i < 160; i++)
+  {
+  dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
 
-  testList[2][1] = 1;
-  testList[2][4] = 1;
-  testList[2][8] = 1;
+  }
 
-  testList[3][1] = 1;
-  testList[3][4] = 1;
-  testList[3][5] = 1;
-
-  testList[4][2] = 1;
-  testList[4][3] = 1;
-
-  testList[5][3] = 1;
-  testList[5][6] = 1;
-
-  testList[6][5] = 1;
-  testList[6][7] = 1;
-
-  testList[7][1] = 1;
-  testList[7][6] = 1;
-
-  testList[8][0] = 1;
-  testList[8][9] = 1;
-  testList[8][2] = 1;
-
-  testList[9][1] = 1;
-  testList[9][8] = 1;
-
-
-
-
-
-  // node 1 | TRUE
-  // node 2 | FALSE
-  // ...
-
-
- // initialize all visited table values to FALSE
-
- for(i = 0; i < 10; i++)
- {
-   visited_bool[i] = FALSE;
- }
-
- // initialize all prev table values to -1 since no nodes have been visited yet
- for(i = 0; i < 10; i++)
- {
-   prev[i] = -1;
- }
-
-
-    // Begin algorithm
-    //-----------------------------------------------------------------------------------
-
-    // Empty queue First
-    while(!(call q.empty()))
-    {
-      call q.dequeue();
-    }
-
-    // index for source node from visited table, already visited source
-
-    source_index = 2 ;
-    visited_bool[source_index] = TRUE;
-
-    call q.enqueue(2);
-
-
-    dbg(GENERAL_CHANNEL, "BEFORE WHILE");
-
-      while(!(call q.empty()))
-      {
-
-        v = call q.dequeue();
-        dbg(GENERAL_CHANNEL, "IN WHILE");
-
-        for(i = 0; i < 10; i++)
-          {
-
-            /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
-            if(testList[i][v] == 1)
-              {
-                  if(visited_bool[i] == FALSE)
-                  {
-                    visited_bool[i] = TRUE;
-                    prev[i] = v;
-
-
-
-
-
-                    /*dbg(ROUTING_CHANNEL, "Prev[8] = %hhu\n", prev[8] );*/
-
-
-                    call q.enqueue(i);
-                  }
-              }
-          }
-      }
-
-
-// Now our prev array should be complete, we need to traverse this array in order to find the shortest path and the next hop
-// prev[w] = v, w comes after v
-
-
-
-/*dbg(ROUTING_CHANNEL, "Prev[0] = %hhu\n", prev[9] );*/
-
-
-
-// Algorithm complete, now find forwarding table next values
-
-
-/*for(i = 0; i < 10; i++)
-{
-dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
-
-}*/
-
-
-for(i = 0; i < 10; i++)
-{
-j = i;
-if(j == 2)
-  j++;
-
-while(prev[j] != 2 && prev[j] != 255)
-{
-
-  dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j, prev[j] );
-  j = prev[j];
-  //nextHop = prev[j];
-} // this loop only ends when prev[j] == 2, so j is the next hop
-nextHop = j;
-/*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
-
-
-forwardingTableTo[i] = i;
-forwardingTableNext[i] = nextHop;
-
-}
-
-forwardingTableNext[2] = 2;
-
-for(i = 0; i < 10; i++)
-{
-dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
-
-}
-
-}
-
+  }
 
 
 
@@ -467,8 +474,8 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
    event void Boot.booted(){
 	  int i;
 	  int j;
-
-    updateForwardingTable();
+	routingTableNumNodes = 0;
+    //updateForwardingTable();
 
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
@@ -488,10 +495,18 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
    event void periodicTimer.fired() {
 	   //printNeighbors ();
 	   call randomTimer.startOneShot((call Random.rand32())%200);
+	   updateForwardingTable();
+
+	   routingTableNumNodes = 0;
    }
 
    event void randomTimer.fired() {
+
+	   // Should the LSP's be send first? Or the Neighbor discovery?
+	   sendLSP();
 	   sendNeighborDiscoverPack();
+
+
    }
 
    event void AMControl.startDone(error_t err){
@@ -572,20 +587,27 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
 			 if (myMsg->protocol == PROTOCOL_LINKEDSTATE) {
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
-
+				 dbg (GENERAL_CHANNEL, "It's a linkState packet!!!\n");
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
 				 readLinkStatePack (&(routingTableNeighborArray[myMsg->src - 1][0]), (uint8_t *)(myMsg->payload));
+				 routingTableNumNodes++;
+
+				 // Forward and keep flooding the Link State Packet
+				 call Sender.send(*myMsg, AM_BROADCAST_ADDR);
 				 //memccpy(routingTablerow, arr, PACKET_MAX_PAYLOAD_SIZE * 8);
-				 return msg;
+				 //return msg;
+			 } else {
+				 dbg (GENERAL_CHANNEL, "It's not for me. forwarding it on\n");
+				 call Sender.send(*myMsg, forwardingTableNext[myMsg->dest - 1]);
 			 }
 
 
-			 dbg (GENERAL_CHANNEL, "It's not for me. forwarding it on\n");
+
 			 //**************************************************************8
 			 // Should this store an array of last "top" (number of neighbors) amount of packets stored, to tell when one of them was sent back to previous node again????? That way packets won't go back and forth?????
 			 //call Sender.send(*myMsg, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for neighbor discovery and link state packets
-			 call Sender.send(*myMsg, forwardingTableNext[myMsg->dest - 1]);
+
 			 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
 			 packsSent++;
 		 } else if (myMsg->TTL <= 0) {
