@@ -220,6 +220,13 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   // The recieve function will now make a list of everyone who responded to this packet (who forwards it back with TTL=0).
 	   // Maybe the neighbors can just send it only back to the source instead of to AM_BROADCAST_ADDR to all?
    }
+   
+   void sendLSP () {
+		uint8_t data [PACKET_MAX_PAYLOAD_SIZE];
+		writeLinkStatePack (data);
+		makePack(&sendPackage, TOS_NODE_ID, 0, 21, PROTOCOL_LINKEDSTATE, mySeqNum, data, PACKET_MAX_PAYLOAD_SIZE);
+		call Sender.send(sendPackage, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for flooding and neighbor discovery
+   }
 
    void printNeighbors () {
 	   int i;
@@ -297,7 +304,7 @@ implementation{	// each node's private variables must be declared here, (or it w
     {
       testList[r][t] = 0;
     }
-  }
+  /* } */
 
   testList[0][8] = 1;
 
@@ -456,7 +463,7 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
 }
 
 }
-
+}
 
 
 
@@ -467,8 +474,8 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
    event void Boot.booted(){
 	  int i;
 	  int j;
-
-    updateForwardingTable();
+	routingTableNumNodes = 0;
+    //updateForwardingTable();
 
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
@@ -488,10 +495,18 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
    event void periodicTimer.fired() {
 	   //printNeighbors ();
 	   call randomTimer.startOneShot((call Random.rand32())%200);
+	   updateForwardingTable();
+	   
+	   routingTableNumNodes = 0;
    }
 
    event void randomTimer.fired() {
+	   
+	   // Should the LSP's be send first? Or the Neighbor discovery?
+	   sendLSP();
 	   sendNeighborDiscoverPack();
+	   
+	   
    }
 
    event void AMControl.startDone(error_t err){
@@ -572,20 +587,27 @@ dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwa
 			 if (myMsg->protocol == PROTOCOL_LINKEDSTATE) {
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
-
+				 dbg (GENERAL_CHANNEL, "It's a linkState packet!!!\n");
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
 				 readLinkStatePack (&(routingTableNeighborArray[myMsg->src - 1][0]), (uint8_t *)(myMsg->payload));
+				 routingTableNumNodes++;
+				 
+				 // Forward and keep flooding the Link State Packet
+				 call Sender.send(*myMsg, AM_BROADCAST_ADDR);
 				 //memccpy(routingTablerow, arr, PACKET_MAX_PAYLOAD_SIZE * 8);
-				 return msg;
+				 //return msg;
+			 } else {
+				 dbg (GENERAL_CHANNEL, "It's not for me. forwarding it on\n");
+				 call Sender.send(*myMsg, forwardingTableNext[myMsg->dest - 1]);
 			 }
 
 
-			 dbg (GENERAL_CHANNEL, "It's not for me. forwarding it on\n");
+			 
 			 //**************************************************************8
 			 // Should this store an array of last "top" (number of neighbors) amount of packets stored, to tell when one of them was sent back to previous node again????? That way packets won't go back and forth?????
 			 //call Sender.send(*myMsg, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for neighbor discovery and link state packets
-			 call Sender.send(*myMsg, forwardingTableNext[myMsg->dest - 1]);
+			 
 			 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
 			 packsSent++;
 		 } else if (myMsg->TTL <= 0) {
