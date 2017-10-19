@@ -43,7 +43,7 @@ module Node{
    uses interface Timer<TMilli> as periodicTimer;//, randomTimer;	// Interface that was wired in NodeC.nc
    uses interface Timer<TMilli> as randomTimer;
    uses interface CommandHandler;
-   uses interface Queue<int> as queue;
+   uses interface Queue<uint16_t> as q;
 
 }
 
@@ -153,33 +153,43 @@ implementation{	// each node's private variables must be declared here, (or it w
    void updateForwardingTable()
    {
 
-   /*BFS Psuedocode, since unweighted graph, guarantees all edges are 1
-   Set all nodes to "not visited";
+      /*
+      Requirements
+      1. Adjacency list
+      2. Visited Table (T/F)
+      3. Previous list
+      */
 
-   q = new Queue();
+      // Array to hold previous values so the path can be traced
+      uint16_t prev[50];
 
-   q.enqueue(initial node);
+      // Arrays to hold visited nodes and their boolean values
+      uint16_t visited_node[50];
+      bool visited_bool[50];
 
-   while ( q ≠ empty ) do
-   {
-      x = q.dequeue();
+      // node 1 | TRUE
+      // node 2 | FALSE
+      // ...
 
-      if ( x has not been visited )
-      {
-         visited[x] = true;         // Visit node x !
 
-         for ( every edge (x, y)   we are using all edges !  )
-            if ( y has not been visited )
-	       q.enqueue(y);       // Use the edge (x,y) !!!
-      }*/
 
 
       // First empty queue
-      while(!(call queue.empty())
+      while(!(call q.empty()))
       {
-        call queue.pop();
+        call q.head();
       }
 
+      call q.enqueue(TOS_NODE_ID);
+
+      /*while(!(call q.empty()))
+      {
+        x = q.dequeue();
+
+        if()
+      }*/
+
+
 
 
    }
@@ -188,7 +198,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
 
-   }
+
 
 
    event void Boot.booted(){
