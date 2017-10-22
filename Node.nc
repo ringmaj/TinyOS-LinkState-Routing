@@ -101,7 +101,7 @@ implementation{	// each node's private variables must be declared here, (or it w
    //uint16_t prevTop = 0;	// previous top (when top is reset to 0, previous top will not be
    uint32_t sentPacks [50];	// stores a packet's ((seq<<16) | src)) taken of last 50 previous packets sent. This will help recognize if a packet has already been sent before, so not to send it again. First 16 bits are the packet's seq. Last 16 bits are packet's src
    uint16_t packsSent = 0;	// counts number of packets sent by this node. Is incremented when a new pack is sent. (packsSent % 50) is used as the index of sentPacks to write the newly packet to
-   uint16_t mySeqNum = 0;	// counts number of packets created by this node (to keep track of duplicate packets). Is incremented when a new packet is created (with makePack)
+   uint16_t mySeqNum = 0;	// counts number of packets created by this node (to keep track of duplicate packets). Is incremented when a new packet is created (with makePack). Is used as the sequence number when making a new pack
 
    // Prototypes
 
@@ -181,9 +181,9 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 	}
 
-	int readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom) {
-		// reads the Link State Packet from the bit format to the array format (like a row in the routing table)
+	int readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom) {	// reads the Link State Packet from the bit format to the array format (like a row in the routing table)
 		int i;
+		dbg (ROUTING_CHANNEL, "Reading LSP:\n");
 		for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE * 8; i++) {	// This should run once for each bit in the Link State Packet payload array
 			if (getBit(payloadFrom, i) == 1) {
 				arrayTo[i] = 1;
@@ -206,7 +206,7 @@ implementation{	// each node's private variables must be declared here, (or it w
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
 
     void sendNeighborDiscoverPack() {
-		char text [] = "hi";	// length is 2 (3 including null char byte '\0' at end)
+		char text [] = "hi neighbors!";	// length is 2 (3 including null char byte '\0' at end)
 
 		//reset the list to empty every time neighbor discovery is called, then re-add them to list when they respond
 		top = 0;
@@ -223,9 +223,14 @@ implementation{	// each node's private variables must be declared here, (or it w
 
    void sendLSP () {
 		uint8_t data [PACKET_MAX_PAYLOAD_SIZE];
-		writeLinkStatePack (data);
+		writeLinkStatePack (data);	// Creates and formats the LSP, and stores it in array "data"
+		dbg (ROUTING_CHANNEL, "Sending LSP:\n");
 		makePack(&sendPackage, TOS_NODE_ID, 0, 21, PROTOCOL_LINKEDSTATE, mySeqNum, data, PACKET_MAX_PAYLOAD_SIZE);
+		logPack(&sendPackage);
 		call Sender.send(sendPackage, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for flooding and neighbor discovery
+		sentPacks[packsSent%50] = (((sendPackage.seq) << 16) | sendPackage.src);	// keep track of all packs send so as not to send them twice
+		packsSent++;
+		mySeqNum++;
    }
 
    void printNeighbors () {
@@ -255,32 +260,32 @@ implementation{	// each node's private variables must be declared here, (or it w
 
    void updateForwardingTable()
   {
-   //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
+	   //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
 
-    /*
-    Requirements
-    1. Adjacency list
-    2. Visited Table (T/F)
-    3. Previous list
-    */
-
-
-
-    uint16_t v;
-    uint16_t source_index;
-    uint16_t nextHop;
-    int i;
-    int j;
-    int saveJ;
+		/*
+		Requirements
+		1. Adjacency list
+		2. Visited Table (T/F)
+		3. Previous list
+		*/
 
 
 
-    int r;
-    int t;
+		uint16_t v;
+		uint16_t source_index;
+		uint16_t nextHop;
+		int i;
+		int j;
+		int saveJ;
 
 
-        // Array to hold previous values so the path can be traced
-        uint16_t prev[160];
+
+		int r;
+		int t;
+
+
+		// Array to hold previous values so the path can be traced
+		uint16_t prev[160];
 
 
 
@@ -433,33 +438,33 @@ implementation{	// each node's private variables must be declared here, (or it w
   }*/
 
 
-  for(i = 0; i < 160; i++)
-  {
-  j = i;
-  if(j == (TOS_NODE_ID - 1))
-    j++;
+	  for(i = 0; i < 160; i++)
+	  {
+		  j = i;
+		  if(j == (TOS_NODE_ID - 1))
+			j++;
 
-  while(prev[j] != (TOS_NODE_ID - 1) && prev[j] != 255)
-  {
+			  while(prev[j] != (TOS_NODE_ID - 1) && prev[j] != 255)
+			  {
 
-    dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j, prev[j] );
-    j = prev[j];
-    //nextHop = prev[j];
-  } // this loop only ends when prev[j] == 2, so j is the next hop
-  nextHop = j;
-  /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
+				dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j, prev[j] );
+				j = prev[j];
+				//nextHop = prev[j];
+			  } // this loop only ends when prev[j] == 2, so j is the next hop
+		  nextHop = j;
+		  /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
 
 
-  forwardingTableTo[i] = i + 1;
-  forwardingTableNext[i] = nextHop;
+		  forwardingTableTo[i] = i + 1;
+		  forwardingTableNext[i] = nextHop;
 
-  }
+	  }
 
   forwardingTableNext[(TOS_NODE_ID - 1)] = (TOS_NODE_ID - 1);
 
   for(i = 0; i < 160; i++)
   {
-  dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
+	dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
 
   }
 
@@ -502,12 +507,9 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
    event void randomTimer.fired() {
-
-	   // Should the LSP's be send first? Or the Neighbor discovery?
-	   sendLSP();
-	   sendNeighborDiscoverPack();
-
-
+		// Should the LSP's be send first? Or the Neighbor discovery?
+		sendNeighborDiscoverPack();
+		sendLSP();
    }
 
    event void AMControl.startDone(error_t err){
@@ -559,7 +561,6 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 		 } else if (myMsg->TTL > 0 && myMsg->src != TOS_NODE_ID) {	// should also check that this packet wasn't already forwarded by this node (store a list of packets already forwarded in a hashmap or a list)
 			 myMsg->TTL --;	// will decrementing TTL and incrementing seq this way work? Or do I have to make a new packet?
-			 //myMsg->seq ++;
 
 			 // check if it's another node's network discovery packet
 			 if (myMsg->src == myMsg->dest) {	// if source == destination, then it's a network discovery packet
@@ -588,7 +589,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 			 if (myMsg->protocol == PROTOCOL_LINKEDSTATE) {
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
-				 dbg (GENERAL_CHANNEL, "It's a linkState packet!!!\n");
+				 dbg (ROUTING_CHANNEL, "It's a linkState packet!!!\n");
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
 				 readLinkStatePack (&(routingTableNeighborArray[myMsg->src - 1][0]), (uint8_t *)(myMsg->payload));
@@ -596,10 +597,12 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 				 // Forward and keep flooding the Link State Packet
 				 call Sender.send(*myMsg, AM_BROADCAST_ADDR);
+				 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
+				 packsSent++;
 				 //memccpy(routingTablerow, arr, PACKET_MAX_PAYLOAD_SIZE * 8);
 				 //return msg;
 			 } else {
-				 dbg (GENERAL_CHANNEL, "It's not for me. forwarding it on\n");
+				 dbg (ROUTING_CHANNEL, "It's not for me. forwarding it on\n");
 				 call Sender.send(*myMsg, forwardingTableNext[myMsg->dest - 1]);
 			 }
 
@@ -612,14 +615,14 @@ implementation{	// each node's private variables must be declared here, (or it w
 			 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
 			 packsSent++;
 		 } else if (myMsg->TTL <= 0) {
-			 dbg (GENERAL_CHANNEL, "I recieved a packet with no more time to live. Dropping packet\n");
+			 dbg (ROUTING_CHANNEL, "I recieved a packet with no more time to live. Dropping packet\n");
 		 } else if (myMsg->src == TOS_NODE_ID) {
-			 dbg (GENERAL_CHANNEL, "I recieved my own packet\n");
+			 dbg (ROUTING_CHANNEL, "I recieved my own packet\n");
 		 }
 
          return msg;
       }
-      dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
+      dbg(ROUTING_CHANNEL, "Unknown Packet Type %d\n", len);
 
 
 
