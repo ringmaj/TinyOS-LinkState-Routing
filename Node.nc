@@ -222,7 +222,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   // The recieve function will now make a list of everyone who responded to this packet (who forwards it back with TTL=0).
 	   // Maybe the neighbors can just send it only back to the source instead of to AM_BROADCAST_ADDR to all?
    }
-   
+
    void printLSP (uint8_t* data) {
 		//int i;
 		//uint8_t arr [PACKET_MAX_PAYLOAD_SIZE];
@@ -231,7 +231,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 		//}
 		dbg (ROUTING_CHANNEL, "0x%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19]);
 		//dbg (ROUTING_CHANNEL, "%d", getBit(data, 0));
-	
+
    }
 
    void sendLSP () {
@@ -242,11 +242,11 @@ implementation{	// each node's private variables must be declared here, (or it w
 		//logPack(&sendPackage);
 		dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", sendPackage.src, sendPackage.dest, sendPackage.seq, sendPackage.TTL, sendPackage.protocol);
 		printLSP(sendPackage.payload);
-		
+
 		// Update my own Routing table with my own LSP
 		readLinkStatePack (&(routingTableNeighborArray[sendPackage.src - 1][0]), (uint8_t *)(sendPackage.payload));
 		routingTableNumNodes++;
-		
+
 		call Sender.send(sendPackage, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for flooding and neighbor discovery
 		sentPacks[packsSent%50] = (((sendPackage.seq) << 16) | sendPackage.src);	// keep track of all packs send so as not to send them twice
 		packsSent++;
@@ -278,235 +278,244 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
 
-
    void updateForwardingTable()
-  {
-	   //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
+     {
+       //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
 
-		/*
-		Requirements
-		1. Adjacency list
-		2. Visited Table (T/F)
-		3. Previous list
-		*/
-
-
-
-		uint16_t v;
-		uint16_t source_index;
-		uint16_t nextHop;
-		int i;
-		int j;
-		int saveJ;
+        /*
+        Requirements
+        1. Adjacency list
+        2. Visited Table (T/F)
+        3. Previous list
+        */
 
 
 
-		int r;
-		int t;
+        uint16_t v;
+        uint16_t source_index;
+        uint16_t nextHop;
+        int i;
+        int j;
+        int saveJ;
 
 
-		// Array to hold previous values so the path can be traced
-		uint16_t prev[160];
+
+        int r;
+        int t;
+
+
+            // Array to hold previous values so the path can be traced
+            uint16_t prev[10];
 
 
 
-        // Arrays to hold visited nodes and their boolean values
-        uint16_t visited_node[160];
-        bool visited_bool[160];
-        uint16_t testList[160][160];
+            // Arrays to hold visited nodes and their boolean values
+            uint16_t visited_node[10];
+            bool visited_bool[10];
+            uint16_t testList[10][10];
 
 
-        for(i = 0; i < 160; i++)
+            for(i = 0; i < 10; i++)
+              {
+                prev[i] = -1;
+                visited_bool[i] = FALSE;
+                visited_node[i] = 0;
+
+              }
+
+
+        for(r = 0; r < 10; r++)
+        {
+          for(t = 0; t < 10; t++)
           {
-            prev[i] = -1;
-            visited_bool[i] = FALSE;
-            visited_node[i] = 0;
+            testList[r][t] = 0;
+          }
+        }
 
+        testList[1][9] = 1;
+
+        testList[2][3] = 1;
+        testList[2][4] = 1;
+        testList[2][8] = 1;
+        testList[2][10] = 1;
+
+        testList[3][2] = 1;
+        testList[3][5] = 1;
+        testList[3][9] = 1;
+
+        testList[4][2] = 1;
+        testList[4][5] = 1;
+        testList[4][6] = 1;
+
+        testList[5][3] = 1;
+        testList[5][4] = 1;
+
+        testList[6][4] = 1;
+        testList[6][7] = 1;
+
+        testList[7][6] = 1;
+        testList[7][8] = 1;
+
+        testList[8][2] = 1;
+        testList[8][7] = 1;
+
+        testList[9][1] = 1;
+        testList[9][10] = 1;
+        testList[9][3] = 1;
+
+        testList[10][2] = 1;
+        testList[10][9] = 1;
+
+
+
+
+
+        // node 1 | TRUE
+        // node 2 | FALSE
+        // ...
+
+
+       // initialize all visited table values to FALSE
+
+       for(i = 0; i < 10; i++)
+       {
+         visited_bool[i] = FALSE;
+       }
+
+       // initialize all prev table values to -1 since no nodes have been visited yet
+       for(i = 0; i < 10; i++)
+       {
+         prev[i] = -1;
+       }
+
+
+          // Begin algorithm
+          //-----------------------------------------------------------------------------------
+
+          // Empty queue First
+          while(!(call q.empty()))
+          {
+            call q.dequeue();
           }
 
+          // index for source node from visited table, already visited source
 
-    for(r = 0; r < 160; r++)
-    {
-      for(t = 0; t < 160; t++)
-      {
-        testList[r][t] = 0;
-      }
-    }
+          source_index = 3 ;
+          visited_bool[source_index] = TRUE;
 
-    testList[0][8] = 1;
-
-    testList[1][2] = 1;
-    testList[1][3] = 1;
-    testList[1][7] = 1;
-    testList[1][9] = 1;
-
-    testList[2][1] = 1;
-    testList[2][4] = 1;
-    testList[2][8] = 1;
-
-    testList[3][1] = 1;
-    testList[3][4] = 1;
-    testList[3][5] = 1;
-
-    testList[4][2] = 1;
-    testList[4][3] = 1;
-
-    testList[5][3] = 1;
-    testList[5][6] = 1;
-
-    testList[6][5] = 1;
-    testList[6][7] = 1;
-
-    testList[7][1] = 1;
-    testList[7][6] = 1;
-
-    testList[8][0] = 1;
-    testList[8][9] = 1;
-    testList[8][2] = 1;
-
-    testList[9][1] = 1;
-    testList[9][8] = 1;
+          call q.enqueue(3);
 
 
+          dbg(GENERAL_CHANNEL, "BEFORE WHILE");
 
-
-
-    // node 1 | TRUE
-    // node 2 | FALSE
-    // ...
-
-
-   // initialize all visited table values to FALSE
-
-   for(i = 0; i < 160; i++)
-   {
-     visited_bool[i] = FALSE;
-   }
-
-   // initialize all prev table values to -1 since no nodes have been visited yet
-   for(i = 0; i < 160; i++)
-   {
-     prev[i] = -1;
-   }
-
-
-      // Begin algorithm
-      //-----------------------------------------------------------------------------------
-
-      // Empty queue First
-      while(!(call q.empty()))
-      {
-        call q.dequeue();
-      }
-
-      // index for source node from visited table, already visited source
-
-      source_index = TOS_NODE_ID - 1 ;
-      visited_bool[source_index] = TRUE;
-
-      call q.enqueue(TOS_NODE_ID);
-
-
-      dbg(GENERAL_CHANNEL, "BEFORE WHILE");
-
-        while(!(call q.empty()))
-        {
-
-          v = call q.dequeue();
-          dbg(GENERAL_CHANNEL, "IN WHILE");
-
-          for(i = 0; i < 160; i++)
+            while(!(call q.empty()))
             {
 
-              /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
-              if(routingTableNeighborArray[i][v] == 1)
+              v = call q.dequeue();
+              dbg(GENERAL_CHANNEL, "IN WHILE");
+
+              for(i = 0; i < 10; i++)
                 {
-                    if(visited_bool[i] == FALSE)
+
+                  /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
+                  if(testList[i][v] == 1)
                     {
-                      visited_bool[i] = TRUE;
-                      prev[i] = v;
+                        if(visited_bool[i] == FALSE)
+                        {
+                          visited_bool[i] = TRUE;
+                          prev[i] = v;
 
 
 
 
 
-                      /*dbg(ROUTING_CHANNEL, "Prev[8] = %hhu\n", prev[8] );*/
+                          /*dbg(ROUTING_CHANNEL, "Prev[8] = %hhu\n", prev[8] );*/
 
 
-                      call q.enqueue(i);
+                          call q.enqueue(i);
+                        }
                     }
                 }
             }
-        }
 
 
-  // Now our prev array should be complete, we need to traverse this array in order to find the shortest path and the next hop
-  // prev[w] = v, w comes after v
-
-
-
-  /*dbg(ROUTING_CHANNEL, "Prev[0] = %hhu\n", prev[9] );*/
+      // Now our prev array should be complete, we need to traverse this array in order to find the shortest path and the next hop
+      // prev[w] = v, w comes after v
 
 
 
-  // Algorithm complete, now find forwarding table next values
+      /*dbg(ROUTING_CHANNEL, "Prev[0] = %hhu\n", prev[9] );*/
 
 
-  /*for(i = 0; i < 10; i++)
-  {
-  dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
 
-  }*/
+      // Algorithm complete, now find forwarding table next values
 
 
-	  for(i = 0; i < 160; i++)
-	  {
-		  j = i;
-		  if(j == (TOS_NODE_ID - 1))
-			j++;
+      /*for(i = 0; i < 10; i++)
+      {
+      dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
 
-			  while(prev[j] != (TOS_NODE_ID - 1) && prev[j] != 255)
-			  {
-
-				dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j, prev[j] );
-				j = prev[j];
-				//nextHop = prev[j];
-			  } // this loop only ends when prev[j] == 2, so j is the next hop
-		  nextHop = j;
-		  /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
+      }*/
 
 
-		  forwardingTableTo[i] = i + 1;
-		  forwardingTableNext[i] = nextHop;
+       for(i = 0; i < 10; i++)
+       {
+         dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
 
-	  }
+       }
 
-  forwardingTableNext[(TOS_NODE_ID - 1)] = (TOS_NODE_ID - 1);
 
-  for(i = 0; i < 160; i++)
-  {
-	dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
 
-  }
+      for(i = 1; i < 10; i++)
+      {
+      j = i;
+      if(j == 3)
+        j++;
 
-  }
+      while(prev[j] != 3 && prev[j] != 255)
+      {
+
+        /*dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j+1, prev[j-1] );*/
+        j = prev[j];
+        //nextHop = prev[j];
+      } // this loop only ends when prev[j] == 2, so j is the next hop
+      nextHop = j;
+      /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
+
+
+      forwardingTableTo[i] = i;
+      forwardingTableNext[i] = nextHop;
+
+      }
+
+      forwardingTableNext[3] = 3;
+
+      for(i = 1; i < 10; i++)
+      {
+      dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
+
+      }
+
+     }
+
+
 
 void printRoutingTable() {
 	int i;
 	int j;
 	dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
-	
+
 	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
 		j = 0;
 		dbg (ROUTING_CHANNEL, "%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu\n", routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
-		
+
 		/*
 		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
 			dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
 		}
 		*/
 	}
-	
+
 	dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
 	for (i = 0; i < forwardingTableNumNodes; i++) {
 		dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
@@ -533,19 +542,19 @@ void printRoutingTable() {
 			  routingTableNeighborArray [i][j] = 0;
 		  }
 	  }
-	  
+
 	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time, on start. So don't need to wait for 1st period.
 	  call LSPTimer.startOneShot(400 + ((call Random.rand32()) % 200));
 	  call constantTimer.startOneShot(1000);
    }
-   
-	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list. 
+
+	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list.
 	// recieving the LSP's is required to build the routing table, to understand the topology and do Dijkstra's and find shortest path
 	// Doing Dijkstra's and finding shortest path is required to build the forwarding table
 	// Having the forwarding table is required to send packets
-	
+
 	// So we need a timeline to ensure everything happens in order. And we need to ensure that sending is done at random times (in certain windows of time). To prevent signal collision and ensure transmission arrives on time
-	
+
 	// Timeline of 1 period (beginning at Boot.booted(), or periodicTimer.fired())
 	//[t = 0 milliseconds, Boot.booted called or periodicTimer.fired() called]
 	//[0 <= t < 200, neighbor discovery packets sent early, so ]
@@ -554,7 +563,7 @@ void printRoutingTable() {
 	//[600 <= t < 1000, wait for all LSP's to flood network arrive so we know what network topology looks like before updating forwarding table]
 	//[t == 1000, update forwarding table]
 	//[t == 200000, timer resets, so t = 0 milliseconds]
-	
+
    event void periodicTimer.fired() {
 	   call randomTimer.startOneShot((call Random.rand32())%200);
 	   call LSPTimer.startOneShot(400 + ((call Random.rand32()) % 200));
@@ -568,16 +577,16 @@ void printRoutingTable() {
 		//call LSPTimer.startOneShot(600);
 		//sendLSP();
 		// pause to let the neighbor discovery packets return
-		
+
    }
-   
+
    event void constantTimer.fired() {
 	   //updateForwardingTable();
 	   printRoutingTable();
-	   
+
 	   routingTableNumNodes = 0;
    }
-   
+
    event void LSPTimer.fired () {
 	   sendLSP();
    }
@@ -657,22 +666,22 @@ void printRoutingTable() {
 
 			 // if it is a link state packet, then update forwarding table
 			 if (myMsg->protocol == PROTOCOL_LINKEDSTATE) {
-				 
+
 				 if (myMsg->src == TOS_NODE_ID) {
 					 dbg (ROUTING_CHANNEL, "Recieved my own LSP\n");
 					 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
 					 printLSP(myMsg->payload);
 					 return msg;
 				 }
-				 
-				 				 
-				 
+
+
+
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
 				 dbg (ROUTING_CHANNEL, "Recieved %hhu else's linkState packet!!!\n", myMsg->src);
 				 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
 				 printLSP(myMsg->payload);
-	
+
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
 				 readLinkStatePack (&(routingTableNeighborArray[myMsg->src - 1][0]), (uint8_t *)(myMsg->payload));
@@ -744,7 +753,7 @@ void printRoutingTable() {
 
    event void CommandHandler.printRouteTable(){
 		printRoutingTable();
-		
+
    }
 
    event void CommandHandler.printLinkState(){
