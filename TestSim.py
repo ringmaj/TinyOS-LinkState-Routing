@@ -149,7 +149,8 @@ def main():
     #s.runTime(20);
     #s.neighborDiscover();
 	#s.neighborDMP (1);
-    #s.runTime(20);
+    s.routeDMP(1);
+    s.runTime(20);
 	
 	#s.runTime(20);
 	

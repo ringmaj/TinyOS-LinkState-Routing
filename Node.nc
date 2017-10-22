@@ -587,9 +587,15 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 			 // if it is a link state packet, then update forwarding table
 			 if (myMsg->protocol == PROTOCOL_LINKEDSTATE) {
+				 
+				 if (myMsg->src == TOS_NODE_ID) {
+					 dbg (ROUTING_CHANNEL, "Recieved my own LSP\n");
+					 return msg;
+				 }
+				 
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
-				 dbg (ROUTING_CHANNEL, "It's a linkState packet!!!\n");
+				 dbg (ROUTING_CHANNEL, "Recieved someone else's linkState packet!!!\n");
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
 				 readLinkStatePack (&(routingTableNeighborArray[myMsg->src - 1][0]), (uint8_t *)(myMsg->payload));
@@ -659,9 +665,32 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   printNeighbors ();
    }
 
-   event void CommandHandler.printRouteTable(){}
+   event void CommandHandler.printRouteTable(){
+		int i;
+		int j;
+		dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
+		/*
+		uint8_t routingTableNeighborArray[PACKET_MAX_PAYLOAD_SIZE * 8][PACKET_MAX_PAYLOAD_SIZE * 8];
+		uint16_t routingTableNumNodes;
+		*/
+		
+		for (i = 0; i < 50/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+			for (j = 0; j < 50/*PACKET_MAX_PAYLOAD_SIZE * 8*/; j++) {
+				dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
+			}
+			dbg (ROUTING_CHANNEL, "\n");
+		}
+		
+		dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
+		for (i = 0; i < forwardingTableNumNodes; i++) {
+			dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+		}
+		
+   }
 
-   event void CommandHandler.printLinkState(){}
+   event void CommandHandler.printLinkState(){
+	   dbg (ROUTING_CHANNEL, "Link State Packet:\n");
+   }
 
    event void CommandHandler.printDistanceVector(){}
 
