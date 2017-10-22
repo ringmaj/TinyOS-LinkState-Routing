@@ -28,8 +28,12 @@ implementation {
 	
 	components new TimerMilliC() as myTimerC;	//create a new timer with my alias "myTimerC"
 	components new TimerMilliC() as myRandTimerC;
+	components new TimerMilliC() as myConstantTimerC;
+	components new TimerMilliC() as myLSPTimerC;
 	Node.periodicTimer->myTimerC;	// Wire interfact to component
 	Node.randomTimer->myRandTimerC;
+	Node.constantTimer->myConstantTimerC;
+	Node.LSPTimer->myLSPTimerC;
 	
     Node.Receive -> GeneralReceive;
 

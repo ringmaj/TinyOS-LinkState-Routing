@@ -42,6 +42,8 @@ module Node{
    uses interface SimpleSend as Sender;
    uses interface Timer<TMilli> as periodicTimer;//, randomTimer;	// Interface that was wired in NodeC.nc
    uses interface Timer<TMilli> as randomTimer;
+   uses interface Timer<TMilli> as constantTimer;
+   uses interface Timer<TMilli> as LSPTimer;
    uses interface CommandHandler;
    uses interface Queue<uint16_t> as q;
 
@@ -183,7 +185,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 	int readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom) {	// reads the Link State Packet from the bit format to the array format (like a row in the routing table)
 		int i;
-		dbg (ROUTING_CHANNEL, "Reading LSP:\n");
+		dbg (ROUTING_CHANNEL, "Copying LSP from payload into array\n");
 		for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE * 8; i++) {	// This should run once for each bit in the Link State Packet payload array
 			if (getBit(payloadFrom, i) == 1) {
 				arrayTo[i] = 1;
@@ -220,18 +222,37 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   // The recieve function will now make a list of everyone who responded to this packet (who forwards it back with TTL=0).
 	   // Maybe the neighbors can just send it only back to the source instead of to AM_BROADCAST_ADDR to all?
    }
+   
+   void printLSP (uint8_t* data) {
+		//int i;
+		//uint8_t arr [PACKET_MAX_PAYLOAD_SIZE];
+		//for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE; i++) {
+		//	arr[i] = data[i];
+		//}
+		dbg (ROUTING_CHANNEL, "0x%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19]);
+		//dbg (ROUTING_CHANNEL, "%d", getBit(data, 0));
+	
+   }
 
    void sendLSP () {
 		uint8_t data [PACKET_MAX_PAYLOAD_SIZE];
 		writeLinkStatePack (data);	// Creates and formats the LSP, and stores it in array "data"
 		dbg (ROUTING_CHANNEL, "Sending LSP:\n");
 		makePack(&sendPackage, TOS_NODE_ID, 0, 21, PROTOCOL_LINKEDSTATE, mySeqNum, data, PACKET_MAX_PAYLOAD_SIZE);
-		logPack(&sendPackage);
+		//logPack(&sendPackage);
+		dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", sendPackage.src, sendPackage.dest, sendPackage.seq, sendPackage.TTL, sendPackage.protocol);
+		printLSP(sendPackage.payload);
+		
+		// Update my own Routing table with my own LSP
+		readLinkStatePack (&(routingTableNeighborArray[sendPackage.src - 1][0]), (uint8_t *)(sendPackage.payload));
+		routingTableNumNodes++;
+		
 		call Sender.send(sendPackage, AM_BROADCAST_ADDR);	// AM_BROADCAST_ADDR is only used for flooding and neighbor discovery
 		sentPacks[packsSent%50] = (((sendPackage.seq) << 16) | sendPackage.src);	// keep track of all packs send so as not to send them twice
 		packsSent++;
 		mySeqNum++;
    }
+
 
    void printNeighbors () {
 	   int i;
@@ -291,7 +312,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 
         // Arrays to hold visited nodes and their boolean values
         uint16_t visited_node[160];
-        bool visited_bool[16];
+        bool visited_bool[160];
         uint16_t testList[160][160];
 
 
@@ -470,7 +491,27 @@ implementation{	// each node's private variables must be declared here, (or it w
 
   }
 
-
+void printRoutingTable() {
+	int i;
+	int j;
+	dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
+	
+	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+		j = 0;
+		dbg (ROUTING_CHANNEL, "%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu\n", routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
+		
+		/*
+		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
+			dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
+		}
+		*/
+	}
+	
+	dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
+	for (i = 0; i < forwardingTableNumNodes; i++) {
+		dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+	}
+}
 
 
 
@@ -492,24 +533,53 @@ implementation{	// each node's private variables must be declared here, (or it w
 			  routingTableNeighborArray [i][j] = 0;
 		  }
 	  }
-	  routingTableNumNodes = 0;
-	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time
-
-      dbg(GENERAL_CHANNEL, "Booted\n");
+	  
+	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time, on start. So don't need to wait for 1st period.
+	  call LSPTimer.startOneShot(400 + ((call Random.rand32()) % 200));
+	  call constantTimer.startOneShot(1000);
    }
-
+   
+	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list. 
+	// recieving the LSP's is required to build the routing table, to understand the topology and do Dijkstra's and find shortest path
+	// Doing Dijkstra's and finding shortest path is required to build the forwarding table
+	// Having the forwarding table is required to send packets
+	
+	// So we need a timeline to ensure everything happens in order. And we need to ensure that sending is done at random times (in certain windows of time). To prevent signal collision and ensure transmission arrives on time
+	
+	// Timeline of 1 period (beginning at Boot.booted(), or periodicTimer.fired())
+	//[t = 0 milliseconds, Boot.booted called or periodicTimer.fired() called]
+	//[0 <= t < 200, neighbor discovery packets sent early, so ]
+	//[200 <= t < 400, wait for neighbor discovery packets to arrive, so we know what neighbors we have when we send LSP's]
+	//[400 <= t < 600, send LSP's, using neighbor list from neighbor packets that arrived]
+	//[600 <= t < 1000, wait for all LSP's to flood network arrive so we know what network topology looks like before updating forwarding table]
+	//[t == 1000, update forwarding table]
+	//[t == 200000, timer resets, so t = 0 milliseconds]
+	
    event void periodicTimer.fired() {
-	   //printNeighbors ();
 	   call randomTimer.startOneShot((call Random.rand32())%200);
-	   updateForwardingTable();
-
-	   routingTableNumNodes = 0;
+	   call LSPTimer.startOneShot(400 + ((call Random.rand32()) % 200));
+	   call constantTimer.startOneShot(1000);
    }
 
    event void randomTimer.fired() {
 		// Should the LSP's be send first? Or the Neighbor discovery?
 		sendNeighborDiscoverPack();
-		sendLSP();
+		// pause to let the neighbor discovery packets return
+		//call LSPTimer.startOneShot(600);
+		//sendLSP();
+		// pause to let the neighbor discovery packets return
+		
+   }
+   
+   event void constantTimer.fired() {
+	   //updateForwardingTable();
+	   printRoutingTable();
+	   
+	   routingTableNumNodes = 0;
+   }
+   
+   event void LSPTimer.fired () {
+	   sendLSP();
    }
 
    event void AMControl.startDone(error_t err){
@@ -564,7 +634,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 			 // check if it's another node's network discovery packet
 			 if (myMsg->src == myMsg->dest) {	// if source == destination, then it's a network discovery packet
-				 dbg (NEIGHBOR_CHANNEL, "Recieved someone else's neighbor discovery packet. Sending it back to them\n");
+				 dbg (NEIGHBOR_CHANNEL, "Recieved %hhu's neighbor discovery packet. Sending it back to them\n", myMsg->src);
 				 myMsg->src = TOS_NODE_ID;	// set souce of network discovery packets to current node
 				 call Sender.send(*myMsg, myMsg->dest);	// send it back to the sender
 				 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
@@ -590,12 +660,19 @@ implementation{	// each node's private variables must be declared here, (or it w
 				 
 				 if (myMsg->src == TOS_NODE_ID) {
 					 dbg (ROUTING_CHANNEL, "Recieved my own LSP\n");
+					 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
+					 printLSP(myMsg->payload);
 					 return msg;
 				 }
 				 
+				 				 
+				 
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
-				 dbg (ROUTING_CHANNEL, "Recieved someone else's linkState packet!!!\n");
+				 dbg (ROUTING_CHANNEL, "Recieved %hhu else's linkState packet!!!\n", myMsg->src);
+				 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
+				 printLSP(myMsg->payload);
+	
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
 				 readLinkStatePack (&(routingTableNeighborArray[myMsg->src - 1][0]), (uint8_t *)(myMsg->payload));
@@ -666,25 +743,7 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
    event void CommandHandler.printRouteTable(){
-		int i;
-		int j;
-		dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
-		/*
-		uint8_t routingTableNeighborArray[PACKET_MAX_PAYLOAD_SIZE * 8][PACKET_MAX_PAYLOAD_SIZE * 8];
-		uint16_t routingTableNumNodes;
-		*/
-		
-		for (i = 0; i < 50/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
-			for (j = 0; j < 50/*PACKET_MAX_PAYLOAD_SIZE * 8*/; j++) {
-				dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
-			}
-			dbg (ROUTING_CHANNEL, "\n");
-		}
-		
-		dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
-		for (i = 0; i < forwardingTableNumNodes; i++) {
-			dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
-		}
+		printRoutingTable();
 		
    }
 
