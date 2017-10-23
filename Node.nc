@@ -527,7 +527,7 @@ void printRoutingTable() {
 
 
 
-   event void Boot.booted(){
+event void Boot.booted(){
 	  int i;
 	  int j;
 	routingTableNumNodes = 0;
@@ -544,18 +544,18 @@ void printRoutingTable() {
 		  }
 	  }
 
-	  call randomTimer.startOneShot((call Random.rand32())%200);	// immediately discover neighbors after random time, on start. So don't need to wait for 1st period.
-	  call LSPTimer.startOneShot(400 + ((call Random.rand32()) % 200));
-	  call constantTimer.startOneShot(1000);
+	  call randomTimer.startOneShot((call Random.rand32())%400);	// immediately discover neighbors after random time, on start. So don't need to wait for 1st period.
+	  call LSPTimer.startOneShot(800 + ((call Random.rand32()) % 400));
+	  call constantTimer.startOneShot(2000);
    }
-
-	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list.
+   
+	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list. 
 	// recieving the LSP's is required to build the routing table, to understand the topology and do Dijkstra's and find shortest path
 	// Doing Dijkstra's and finding shortest path is required to build the forwarding table
 	// Having the forwarding table is required to send packets
-
+	
 	// So we need a timeline to ensure everything happens in order. And we need to ensure that sending is done at random times (in certain windows of time). To prevent signal collision and ensure transmission arrives on time
-
+	
 	// Timeline of 1 period (beginning at Boot.booted(), or periodicTimer.fired())
 	//[t = 0 milliseconds, Boot.booted called or periodicTimer.fired() called]
 	//[0 <= t < 200, neighbor discovery packets sent early, so ]
@@ -564,11 +564,11 @@ void printRoutingTable() {
 	//[600 <= t < 1000, wait for all LSP's to flood network arrive so we know what network topology looks like before updating forwarding table]
 	//[t == 1000, update forwarding table]
 	//[t == 200000, timer resets, so t = 0 milliseconds]
-
+	
    event void periodicTimer.fired() {
-	   call randomTimer.startOneShot((call Random.rand32())%200);
-	   call LSPTimer.startOneShot(400 + ((call Random.rand32()) % 200));
-	   call constantTimer.startOneShot(1000);
+	   call randomTimer.startOneShot((call Random.rand32())%400);
+	   call LSPTimer.startOneShot(800 + ((call Random.rand32()) % 400));
+	   call constantTimer.startOneShot(2000);
    }
 
    event void randomTimer.fired() {
