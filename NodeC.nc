@@ -17,15 +17,15 @@ configuration NodeC{
 }
 implementation {
     components MainC;
-    
+
     components Node;
     components new AMReceiverC(AM_PACK) as GeneralReceive;
 
     Node -> MainC.Boot;
-	
+
 	components  RandomC as Random;
 	Node.Random->Random;
-	
+
 	components new TimerMilliC() as myTimerC;	//create a new timer with my alias "myTimerC"
 	components new TimerMilliC() as myRandTimerC;
 	components new TimerMilliC() as myConstantTimerC;
@@ -34,7 +34,7 @@ implementation {
 	Node.randomTimer->myRandTimerC;
 	Node.constantTimer->myConstantTimerC;
 	Node.LSPTimer->myLSPTimerC;
-	
+
     Node.Receive -> GeneralReceive;
 
     components ActiveMessageC;
@@ -45,7 +45,7 @@ implementation {
 
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
-	
+
 	components new QueueC(uint16_t, 20);
 	Node.q -> QueueC;
 }
