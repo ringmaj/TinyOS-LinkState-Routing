@@ -177,7 +177,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 			//The limitation of this system is that the LSP payload can only deal with node ID's from 0 to 159 (inclusive). 0 <= nodeID <= 159
 
 			// sets a bit in writeTo[], at the position if the node ID (from neighbors[i]), to 1 to indicate that the neighbor is included
-			setBit(writeTo, neighbors[i], 1);
+			setBit(writeTo, neighbors[i] - 1, 1);
 		}
 
 
@@ -509,20 +509,17 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
        i = 1;
-       dbg (ROUTING_CHANNEL, "   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d %d %d %d %d %d %d %d %d %d %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9, i+10, i+11, i+12, i+13, i+14, i+15, i+16, i+17, i+18, i+19, i+20);
+       dbg (ROUTING_CHANNEL, "\n   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d %d %d %d %d %d %d %d %d %d %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9, i+10, i+11, i+12, i+13, i+14, i+15, i+16, i+17, i+18, i+19, i+20);
 
    	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
    		j = 0;
 
-       if(i >= 9)
-       {
-         dbg (ROUTING_CHANNEL, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
+       if(i >= 9) {
+			printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+		} else {
+			printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
 
-       }
-       else {
-         dbg (ROUTING_CHANNEL, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
-
-       }
+		}
 
    		/*
    		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
@@ -692,7 +689,7 @@ event void Boot.booted(){
 
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
-				 dbg (ROUTING_CHANNEL, "Recieved %hhu else's linkState packet!!!\n", myMsg->src);
+				 dbg (ROUTING_CHANNEL, "Recieved %hhu's linkState packet!!!\n", myMsg->src);
 				 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
 				 printLSP(myMsg->payload);
 
