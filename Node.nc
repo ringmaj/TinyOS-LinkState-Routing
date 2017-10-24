@@ -501,28 +501,41 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
 
-void printRoutingTable() {
-	int i;
-	int j;
-	dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
+   void printRoutingTable() {
+   	int i;
+   	int j;
+   	dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
 
-	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
-		j = 0;
-		dbg (ROUTING_CHANNEL, "%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu%hhu\n", routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
 
-		/*
-		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
-			dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
-		}
-		*/
-	}
 
-	dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
-	for (i = 0; i < forwardingTableNumNodes; i++) {
-		dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
-	}
-}
+       i = 1;
+       dbg (ROUTING_CHANNEL, "   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d %d %d %d %d %d %d %d %d %d %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9, i+10, i+11, i+12, i+13, i+14, i+15, i+16, i+17, i+18, i+19, i+20);
 
+   	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+   		j = 0;
+
+       if(i >= 9)
+       {
+         dbg (ROUTING_CHANNEL, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
+
+       }
+       else {
+         dbg (ROUTING_CHANNEL, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++], routingTableNeighborArray[i][j++]);
+
+       }
+
+   		/*
+   		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
+   			dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
+   		}
+   		*/
+   	}
+
+   	dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
+   	for (i = 0; i < forwardingTableNumNodes; i++) {
+   		dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+   	}
+   }
 
 
 
@@ -548,14 +561,14 @@ event void Boot.booted(){
 	  call LSPTimer.startOneShot(800 + ((call Random.rand32()) % 400));
 	  call constantTimer.startOneShot(2000);
    }
-   
-	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list. 
+
+	// neighbor discovery is required to put the neigbors in the LSP, and send the neighbor list.
 	// recieving the LSP's is required to build the routing table, to understand the topology and do Dijkstra's and find shortest path
 	// Doing Dijkstra's and finding shortest path is required to build the forwarding table
 	// Having the forwarding table is required to send packets
-	
+
 	// So we need a timeline to ensure everything happens in order. And we need to ensure that sending is done at random times (in certain windows of time). To prevent signal collision and ensure transmission arrives on time
-	
+
 	// Timeline of 1 period (beginning at Boot.booted(), or periodicTimer.fired())
 	//[t = 0 milliseconds, Boot.booted called or periodicTimer.fired() called]
 	//[0 <= t < 200, neighbor discovery packets sent early, so ]
@@ -564,7 +577,7 @@ event void Boot.booted(){
 	//[600 <= t < 1000, wait for all LSP's to flood network arrive so we know what network topology looks like before updating forwarding table]
 	//[t == 1000, update forwarding table]
 	//[t == 200000, timer resets, so t = 0 milliseconds]
-	
+
    event void periodicTimer.fired() {
 	   call randomTimer.startOneShot((call Random.rand32())%400);
 	   call LSPTimer.startOneShot(800 + ((call Random.rand32()) % 400));
