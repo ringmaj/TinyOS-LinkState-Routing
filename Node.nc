@@ -278,7 +278,7 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
 
-   void updateForwardingTable()
+   void updateForwardingTable(int size)
    {
     //   http://www.eecs.yorku.ca/course_archive/2006-07/W/2011/Notes/BFS_part2.pdf
 
@@ -304,18 +304,20 @@ implementation{	// each node's private variables must be declared here, (or it w
      int t;
 
 
+
+
          // Array to hold previous values so the path can be traced
-         uint16_t prev[11];
+         uint16_t prev[size];
 
 
 
          // Arrays to hold visited nodes and their boolean values
-         uint16_t visited_node[11];
-         bool visited_bool[11];
-         uint16_t testList[11][11];
+         uint16_t visited_node[size+1];
+         bool visited_bool[size+1];
+         uint16_t testList[size+1][size+1];
 
 
-         for(i = 0; i <= 10; i++)
+         for(i = 0; i <= size; i++)
            {
              prev[i] = -1;
              visited_bool[i] = FALSE;
@@ -324,9 +326,9 @@ implementation{	// each node's private variables must be declared here, (or it w
            }
 
 
-     for(r = 0; r <= 10; r++)
+     for(r = 0; r <= size; r++)
      {
-       for(t = 0; t <= 10; t++)
+       for(t = 0; t <= size; t++)
        {
          testList[r][t] = 0;
        }
@@ -377,13 +379,13 @@ implementation{	// each node's private variables must be declared here, (or it w
 
     // initialize all visited table values to FALSE
 
-    for(i = 0; i <= 10; i++)
+    for(i = 0; i <= size; i++)
     {
       visited_bool[i] = FALSE;
     }
 
     // initialize all prev table values to -1 since no nodes have been visited yet
-    for(i = 0; i <= 10; i++)
+    for(i = 0; i <= size; i++)
     {
       prev[i] = -1;
     }
@@ -400,25 +402,25 @@ implementation{	// each node's private variables must be declared here, (or it w
 
        // index for source node from visited table, already visited source
 
-       source_index = 3 ;
+       source_index = TOS_NODE_ID ;
        visited_bool[source_index] = TRUE;
 
-       call q.enqueue(3);
+       call q.enqueue(TOS_NODE_ID);
 
 
-       dbg(GENERAL_CHANNEL, "BEFORE WHILE");
+       /*dbg(GENERAL_CHANNEL, "BEFORE WHILE");*/
 
          while(!(call q.empty()))
          {
 
            v = call q.dequeue();
-           dbg(GENERAL_CHANNEL, "IN WHILE");
+           /*dbg(GENERAL_CHANNEL, "IN WHILE");*/
 
-           for(i = 0; i <= 10; i++)
+           for(i = 1; i <= size; i++)
              {
 
                /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
-               if(testList[i][v] == 1)
+               if(routingTableNeighborArray[v-1][i-1] == 1)
                  {
                      if(visited_bool[i] == FALSE)
                      {
@@ -458,46 +460,54 @@ implementation{	// each node's private variables must be declared here, (or it w
    }*/
 
 
-    for(i = 0; i <= 10; i++)
+   dbg(ROUTING_CHANNEL, "Node: %hhu's PREV table: \n",  TOS_NODE_ID );
+
+    for(i = 0; i <= size; i++)
     {
       dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
 
     }
 
+    /*prev[3] = 3;*/
 
-
-   for(i = 1; i <= 10; i++)
+    // seg fault here!
+   for(i = 1; i <= size; i++)
    {
-   j = i;
-   if(j == 3)
-     j++;
+     j = i;
+     /*if(j == 3)
+       j++;*/
 
-   while(prev[j] != 3 && prev[j] != 255)
-   {
-
-     /*dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j+1, prev[j-1] );*/
-     j = prev[j];
-     //nextHop = prev[j];
-   } // this loop only ends when prev[j] == 2, so j is the next hop
-   nextHop = j;
-   /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
+       //dbg (ROUTING_CHANNEL, "Made it to i =  %d\n", i);
 
 
-   forwardingTableTo[i] = i;
-   forwardingTableNext[i] = nextHop;
+     while(prev[j] != TOS_NODE_ID && prev[j] < 160)
+     {
+       /*dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j+1, prev[j-1] );*/
+       j = prev[j];
+      // dbg (ROUTING_CHANNEL, " - In\n");
+     } // this loop only ends when prev[j] == 2, so j is the next hop
+     nextHop = j;
+     /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
+
+
+     forwardingTableTo[i] = i;
+     if(prev[j] < 160)
+      forwardingTableNext[i] = nextHop;
+     //dbg (ROUTING_CHANNEL, " - Out\n");
+
 
    }
 
-   forwardingTableNext[3] = 3;
+   forwardingTableNext[TOS_NODE_ID] = TOS_NODE_ID;
 
-   for(i = 1; i <= 10; i++)
+   dbg(ROUTING_CHANNEL, "Node: %hhu's Forwarding table: \n",  TOS_NODE_ID );
+   for(i = 1; i <= size; i++)
    {
    dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
 
    }
 
    }
-
 
 
 
@@ -592,7 +602,7 @@ event void Boot.booted(){
    }
 
    event void constantTimer.fired() {
-	   //updateForwardingTable();
+	   updateForwardingTable(19);
 	   printRoutingTable();
 
 	   routingTableNumNodes = 0;
