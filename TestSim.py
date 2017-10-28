@@ -13,6 +13,7 @@ class TestSim:
     CMD_PING = 0
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
+    CMD_LINKSTATE_DUMP = 2
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -120,7 +121,10 @@ class TestSim:
 
     def routeDMP(self, destination):
         self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command");
-
+    
+    def linkStateDMP (self, destination):
+        self.sendCMD(self.CMD_LINKSTATE_DUMP, destination, "linkstate command");
+    
     def addChannel(self, channelName, out=sys.stdout):
         print 'Adding Channel', channelName;
         self.t.addChannel(channelName, out);
@@ -133,18 +137,19 @@ class TestSim:
 def main():
     s = TestSim();
     s.runTime(10);
-    s.loadTopo("long_line.topo");
+    s.loadTopo("example.topo");
     s.loadNoise("no_noise.txt");
     s.bootAll();
     s.addChannel(s.COMMAND_CHANNEL);
-    s.addChannel(s.GENERAL_CHANNEL);
-    s.addChannel(s.NEIGHBOR_CHANNEL);
-    s.addChannel(s.ROUTING_CHANNEL);
-    s.runTime(20);
-	
-	
-    s.neighborDMP(1);
-    s.routeDMP(1);
+    #s.addChannel(s.GENERAL_CHANNEL);
+    #s.addChannel(s.NEIGHBOR_CHANNEL);
+    #s.addChannel(s.ROUTING_CHANNEL);
+    s.runTime(20);	
+    
+    #s.neighborDMP(2);
+    
+    #s.linkStateDMP(2);
+    s.routeDMP(2);
     '''
     s.ping(1, 2, "Hello World");
     s.runTime(10);

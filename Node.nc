@@ -119,7 +119,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 		//dbg (GENERAL_CHANNEL, "setBit was called\n");
 		if (!(valToSetTo == 0 || valToSetTo == 1)) {
-			printf ("setBit error: setBit can only set a bit to 0 or 1\n");
+			dbg (GENERAL_CHANNEL, "setBit error: setBit can only set a bit to 0 or 1\n");
 			return 0;
 		}
 
@@ -223,13 +223,13 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   // Maybe the neighbors can just send it only back to the source instead of to AM_BROADCAST_ADDR to all?
    }
 
-   void printLSP (uint8_t* data) {
+   void printLSP (uint8_t* data, char channel []) {
 		//int i;
 		//uint8_t arr [PACKET_MAX_PAYLOAD_SIZE];
 		//for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE; i++) {
 		//	arr[i] = data[i];
 		//}
-		dbg (ROUTING_CHANNEL, "0x%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19]);
+		dbg (channel, "0x%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19]);
 		//dbg (ROUTING_CHANNEL, "%d", getBit(data, 0));
 
    }
@@ -241,7 +241,9 @@ implementation{	// each node's private variables must be declared here, (or it w
 		makePack(&sendPackage, TOS_NODE_ID, 0, 21, PROTOCOL_LINKEDSTATE, mySeqNum, data, PACKET_MAX_PAYLOAD_SIZE);
 		//logPack(&sendPackage);
 		dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", sendPackage.src, sendPackage.dest, sendPackage.seq, sendPackage.TTL, sendPackage.protocol);
-		printLSP(sendPackage.payload);
+		
+		// is this an incompatible pointer type???????????
+		printLSP(sendPackage.payload, GENERAL_CHANNEL);
 
 		// Update my own Routing table with my own LSP
 		readLinkStatePack (&(routingTableNeighborArray[sendPackage.src - 1][0]), (uint8_t *)(sendPackage.payload));
@@ -254,12 +256,12 @@ implementation{	// each node's private variables must be declared here, (or it w
    }
 
 
-   void printNeighbors () {
+   void printNeighbors (char channel []) {
 	   int i;
-	   dbg (NEIGHBOR_CHANNEL, "My %hhu neighbor(s) are:\n", top);
+	   dbg (channel, "My %hhu neighbor(s) are:\n", top);
 
 	   for (i = 0; i < top; i++) {
-		   dbg (NEIGHBOR_CHANNEL, "%hhu\n", neighbors[i]);
+		   dbg (channel, "%hhu\n", neighbors[i]);
 	   }
    }
 
@@ -511,36 +513,42 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
 
-   void printRoutingTable() {
+   void printRoutingTable(char channel []) {
    	int i;
    	int j;
-   	dbg (ROUTING_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
+	
+	dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
+	
+   	dbg (channel, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
 
 
 
        i = 1;
-       dbg (ROUTING_CHANNEL, "\n   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d %d %d %d %d %d %d %d %d %d %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9, i+10, i+11, i+12, i+13, i+14, i+15, i+16, i+17, i+18, i+19, i+20);
+       dbg (channel, "%d  %d  %d  %d  %d  %d  %d  %d  %d  %d %d %d %d %d %d %d %d %d %d %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9, i+10, i+11, i+12, i+13, i+14, i+15, i+16, i+17, i+18, i+19, i+20);
 
    	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
    		j = 0;
 
        if(i >= 9) {
-			printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+			//printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+			dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+
 		} else {
-			printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+			//printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+			dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
 
 		}
 
    		/*
    		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
-   			dbg (ROUTING_CHANNEL, "%hhu", routingTableNeighborArray[i][j]);
+   			dbg (channel, "%hhu", routingTableNeighborArray[i][j]);
    		}
    		*/
    	}
 
-   	dbg (ROUTING_CHANNEL, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
+   	dbg (channel, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
    	for (i = 0; i < forwardingTableNumNodes; i++) {
-   		dbg (ROUTING_CHANNEL, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+   		dbg (channel, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
    	}
    }
 
@@ -550,20 +558,15 @@ implementation{	// each node's private variables must be declared here, (or it w
 event void Boot.booted(){
 	  int i;
 	  int j;
-	routingTableNumNodes = 0;
-    // whitespace
-    //updateForwardingTable();
-
+	  routingTableNumNodes = 0;
       call AMControl.start();
 	  call periodicTimer.startPeriodic(200000);
-	  //call periodicTimer.fired();
-	  //sendNeighborDiscoverPack();
 	  for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE * 8; i++) {
 		  for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
 			  routingTableNeighborArray [i][j] = 0;
 		  }
 	  }
-
+	  //printRoutingTable (COMMAND_CHANNEL);
 	  call randomTimer.startOneShot((call Random.rand32())%400);	// immediately discover neighbors after random time, on start. So don't need to wait for 1st period.
 	  call LSPTimer.startOneShot(800 + ((call Random.rand32()) % 400));
 	  call constantTimer.startOneShot(2000);
@@ -603,7 +606,7 @@ event void Boot.booted(){
 
    event void constantTimer.fired() {
 	   updateForwardingTable(19);
-	   printRoutingTable();
+	   printRoutingTable(ROUTING_CHANNEL);
 
 	   routingTableNumNodes = 0;
    }
@@ -626,6 +629,7 @@ event void Boot.booted(){
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
 	  int i;
 	  uint32_t key;
+	  //bool found;
       //dbg(GENERAL_CHANNEL, "\nPacket Received: ");
 
 
@@ -638,8 +642,20 @@ event void Boot.booted(){
 			 if (myMsg->TTL == 0 && myMsg->protocol == 6 && myMsg->src != TOS_NODE_ID/*&& strncmp(text, payload, 2) == 0*/) {	// Should this also check if a network discovery packet has been sent recently???
 
 				 // record the neighbor (this packet's sender)
-				 neighbors [top] = myMsg->src;
-				 top++;
+				 // If this neighbor is not in neighborArray, then add it to neighborArray
+				 //found = FALSE;
+				 for (i = 0; i < top; i++) {
+					 if (neighbors[i] == myMsg->src) {
+						 break;
+					 }
+				 }
+				 if (i >= top) {
+					 // record the neighbor (this packet's sender)
+					 neighbors [top] = myMsg->src;
+					 top++;
+				 }
+				 //neighbors [top] = myMsg->src;
+				 //top++;
 				 dbg (NEIGHBOR_CHANNEL, "Recieved my own network discovery packet from node %hhu. I now have %hhu neighbors\n", myMsg->src, top);
 
 				 return msg;
@@ -664,11 +680,34 @@ event void Boot.booted(){
 
 			 // check if it's another node's network discovery packet
 			 if (myMsg->src == myMsg->dest) {	// if source == destination, then it's a network discovery packet
-				 dbg (NEIGHBOR_CHANNEL, "Recieved %hhu's neighbor discovery packet. Sending it back to them\n", myMsg->src);
+				 
+				 
+				 
+				 // If this neighbor is not in neighborArray, then add it to neighborArray
+
+				 for (i = 0; i < top; i++) {
+					 if (neighbors[i] == myMsg->src) {
+						 break;
+					 }
+				 }
+				 //dbg (NEIGHBOR_CHANNEL, "This line means that the new code is being added. i = %d. top = %hhu\n", i, top);
+				 if (i >= top) {
+					 // record the neighbor (this packet's sender)
+					 neighbors [top] = myMsg->src;
+					 top++;
+					 //dbg (NEIGHBOR_CHANNEL, "Top: %hhu\n", top);
+				 }
+				 
+				 dbg (NEIGHBOR_CHANNEL, "Recieved %hhu's neighbor discovery packet. Sending it back to them. I now have %hhu neighbors\n", myMsg->src, top);
+				 if (i >= top) {
+					 dbg (NEIGHBOR_CHANNEL, "Node %hhu is now discovered\n", myMsg->src);
+				 }
+				 
 				 myMsg->src = TOS_NODE_ID;	// set souce of network discovery packets to current node
 				 call Sender.send(*myMsg, myMsg->dest);	// send it back to the sender
 				 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
 				 packsSent++;
+				 
 				 return msg;
 			 }
 
@@ -690,8 +729,8 @@ event void Boot.booted(){
 
 				 if (myMsg->src == TOS_NODE_ID) {
 					 dbg (ROUTING_CHANNEL, "Recieved my own LSP\n");
-					 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
-					 printLSP(myMsg->payload);
+					 dbg(ROUTING_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
+					 printLSP(myMsg->payload, ROUTING_CHANNEL);
 					 return msg;
 				 }
 
@@ -700,8 +739,8 @@ event void Boot.booted(){
 				 //uint8_t * routingTableRow;
 				 //arr [PACKET_MAX_PAYLOAD_SIZE * 8];
 				 dbg (ROUTING_CHANNEL, "Recieved %hhu's linkState packet!!!\n", myMsg->src);
-				 dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
-				 printLSP(myMsg->payload);
+				 dbg(ROUTING_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", myMsg->src, myMsg->dest, myMsg->seq, myMsg->TTL, myMsg->protocol);
+				 printLSP(myMsg->payload, ROUTING_CHANNEL);
 
 				 // copy the myMsg->src's neighbor list from payload to the myMsg->src's row in routingTableNeighborArray
 				 //readLinkStatePack (uint8_t * arrayTo, uint8_t * payloadFrom)
@@ -769,16 +808,23 @@ event void Boot.booted(){
    }
 
    event void CommandHandler.printNeighbors(){
-	   printNeighbors ();
+	   printNeighbors (COMMAND_CHANNEL);
    }
 
    event void CommandHandler.printRouteTable(){
-		printRoutingTable();
-
+		//printRoutingTable(COMMAND_CHANNEL);
+		//printRoutingTable (COMMAND_CHANNEL);
+		dbg (COMMAND_CHANNEL, "Command Handler has printed routing table on command channel?\n");
    }
 
    event void CommandHandler.printLinkState(){
+	   uint8_t dummyLSP [PACKET_MAX_PAYLOAD_SIZE];
 	   dbg (ROUTING_CHANNEL, "Link State Packet:\n");
+	   writeLinkStatePack (dummyLSP);
+	   printLSP(dummyLSP, COMMAND_CHANNEL);
+	   dbg (COMMAND_CHANNEL, "Source: %hhu\n", TOS_NODE_ID);
+	   printNeighbors (COMMAND_CHANNEL);
+	   
    }
 
    event void CommandHandler.printDistanceVector(){}
