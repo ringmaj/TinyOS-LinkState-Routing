@@ -121,14 +121,14 @@ class TestSim:
 
     def routeDMP(self, destination):
         self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command");
-    
+
     def linkStateDMP (self, destination):
         self.sendCMD(self.CMD_LINKSTATE_DUMP, destination, "linkstate command");
-    
+
     def addChannel(self, channelName, out=sys.stdout):
         print 'Adding Channel', channelName;
         self.t.addChannel(channelName, out);
-		
+
     #def neighborDiscover(self):
         #print "This function discovers neighbors!\n";
         #self.sendCMD(self.______);
@@ -144,11 +144,13 @@ def main():
     #s.addChannel(s.GENERAL_CHANNEL);
     #s.addChannel(s.NEIGHBOR_CHANNEL);
     #s.addChannel(s.ROUTING_CHANNEL);
-    s.runTime(20);	
-    
+    s.runTime(100);
+    #s.runTime(100);
+
     #s.neighborDMP(2);
-    
-    #s.linkStateDMP(2);
+
+    s.linkStateDMP(2);
+    s.runTime(10);
     s.routeDMP(2);
     '''
     s.ping(1, 2, "Hello World");
@@ -156,15 +158,18 @@ def main():
     s.ping(1, 3, "Hi!");
     s.runTime(20);
     '''
+
+    s.runTime(20);
+    s.ping(1,5, "Hi");
     #s.runTime(20);
     #s.neighborDiscover();
     #s.neighborDMP (1);
     #s.routeDMP(1);
-    s.runTime(20);
-	
+    s.runTime(100);
+
 	#s.runTime(20);
-	
+
 	#s.runTime(20);
-	
+
 if __name__ == '__main__':
     main()
