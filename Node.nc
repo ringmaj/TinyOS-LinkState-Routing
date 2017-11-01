@@ -555,6 +555,8 @@ event void Boot.booted(){
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
 	  int i;
 	  uint32_t key;
+    uint16_t copySrc;
+
 	  //bool found;
       //dbg(GENERAL_CHANNEL, "\nPacket Received: ");
 
@@ -570,7 +572,7 @@ event void Boot.booted(){
 				 // record the neighbor (this packet's sender)
 				 // If this neighbor is not in neighborArray, then add it to neighborArray
 				 //found = FALSE;
-				 /*for (i = 0; i < top; i++) {
+				 for (i = 0; i < top; i++) {
 					 if (neighbors[i] == myMsg->src) {
 						 break;
 					 }
@@ -579,9 +581,9 @@ event void Boot.booted(){
 					 // record the neighbor (this packet's sender)
 					 neighbors [top] = myMsg->src;
 					 top++;
-				 }*/
-				 neighbors [top] = myMsg->src;
-				 top++;
+				 }
+				 /*neighbors [top] = myMsg->src;
+				 top++;*/
 				 dbg (NEIGHBOR_CHANNEL, "Recieved my own network discovery packet from node %hhu. I now have %hhu neighbors\n", myMsg->src, top);
 
 				 return msg;
@@ -612,7 +614,7 @@ event void Boot.booted(){
 
 				 // If this neighbor is not in neighborArray, then add it to neighborArray
 
-				 /*for (i = 0; i < top; i++) {
+				 for (i = 0; i < top; i++) {
 					 if (neighbors[i] == myMsg->src) {
 						 break;
 					 }
@@ -623,7 +625,7 @@ event void Boot.booted(){
 					 neighbors [top] = myMsg->src;
 					 top++;
 					 //dbg (NEIGHBOR_CHANNEL, "Top: %hhu\n", top);
-				 }*/
+				 }
 
          /*neighbors [top] = myMsg->src;
          top++;*/
@@ -632,6 +634,8 @@ event void Boot.booted(){
 				 if (i >= top) {
 					 dbg (NEIGHBOR_CHANNEL, "Node %hhu is now discovered\n", myMsg->src);
 				 }
+
+          copySrc = myMsg->src;
 
 				 myMsg->src = TOS_NODE_ID;	// set souce of network discovery packets to current node
 				 call Sender.send(*myMsg, myMsg->dest);	// send it back to the sender
