@@ -359,7 +359,7 @@ implementation{	// each node's private variables must be declared here, (or it w
            v = call q.dequeue();
            for(i = 1; i <= size; i++)
              {
-               if(routingTableNeighborArray[v-1][i-1] == 1)
+               if(routingTableNeighborArray[i-1][v-1] == 1)
                  {
                      if(visited_bool[i] == FALSE)
                      {
@@ -417,55 +417,26 @@ implementation{	// each node's private variables must be declared here, (or it w
 
 
    void printRoutingTable(char channel []) {
-   	int i;
-   	int j;
-
-
-
-	/*dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
+	int i;
+	int j;
+	/*
+	dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
 
    	dbg (COMMAND_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
-*/
+	*/
 
 
-       i = 1;
-       dbg (channel, "   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8,i+9,i+10,i+11,i+12,i+13,i+14,i+15,i+16,i+17,i+18);
-       /*dbg (channel, "   %d  %d  %d  %d  %d  %d  %d  %d  %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8);*/
+    i = 1;
+    dbg (channel, "   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8,i+9,i+10,i+11,i+12,i+13,i+14,i+15,i+16,i+17,i+18);
 
-       for (i = 0; i < 19/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+    for (i = 0; i < 19/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
          j = 0;
 
-         if(i >= 9) {
-       //printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
-       dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10],routingTableNeighborArray[i][11],routingTableNeighborArray[i][12],routingTableNeighborArray[i][13],routingTableNeighborArray[i][14],routingTableNeighborArray[i][15],routingTableNeighborArray[i][16],routingTableNeighborArray[i][17],routingTableNeighborArray[i][18],routingTableNeighborArray[i][19],routingTableNeighborArray[i][20]);
-
-     } else {
-       //printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
-       dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10],routingTableNeighborArray[i][11],routingTableNeighborArray[i][12],routingTableNeighborArray[i][13],routingTableNeighborArray[i][14],routingTableNeighborArray[i][15],routingTableNeighborArray[i][16],routingTableNeighborArray[i][17],routingTableNeighborArray[i][18],routingTableNeighborArray[i][19],routingTableNeighborArray[i][20]);
-
-     }
-
-
-
-   	//for (i = 0; i < 19/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
-   	//	j = 0;
-
-    //   if(i >= 9) {
-			//printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
-			//dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10]);
-
-		//} else {
-			//printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
-		//	dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10]);
-
-		//}
-
-
-   		/*
-   		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
-   			dbg (channel, "%hhu", routingTableNeighborArray[i][j]);
-   		}
-   		*/
+        if(i >= 9) {
+			dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[0][i], routingTableNeighborArray[1][i], routingTableNeighborArray[2][i], routingTableNeighborArray[3][i], routingTableNeighborArray[4][i], routingTableNeighborArray[5][i], routingTableNeighborArray[6][i], routingTableNeighborArray[7][i], routingTableNeighborArray[8][i], routingTableNeighborArray[9][i], routingTableNeighborArray[10][i],routingTableNeighborArray[11][i],routingTableNeighborArray[12][i],routingTableNeighborArray[13][i],routingTableNeighborArray[14][i],routingTableNeighborArray[15][i],routingTableNeighborArray[16][i],routingTableNeighborArray[17][i],routingTableNeighborArray[18][i],routingTableNeighborArray[19][i],routingTableNeighborArray[20][i]);
+		} else {
+			dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[0][i], routingTableNeighborArray[1][i], routingTableNeighborArray[2][i], routingTableNeighborArray[3][i], routingTableNeighborArray[4][i], routingTableNeighborArray[5][i], routingTableNeighborArray[6][i], routingTableNeighborArray[7][i], routingTableNeighborArray[8][i], routingTableNeighborArray[9][i], routingTableNeighborArray[10][i],routingTableNeighborArray[11][i],routingTableNeighborArray[12][i],routingTableNeighborArray[13][i],routingTableNeighborArray[14][i],routingTableNeighborArray[15][i],routingTableNeighborArray[16][i],routingTableNeighborArray[17][i],routingTableNeighborArray[18][i],routingTableNeighborArray[19][i],routingTableNeighborArray[20][i]);
+		}
    	}
 
     dbg (channel, "\n");
@@ -489,7 +460,7 @@ event void Boot.booted(){
 	  call periodicTimer.startPeriodic(200000);
 	  for (i = 0; i < PACKET_MAX_PAYLOAD_SIZE * 8; i++) {
 		  for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
-			  routingTableNeighborArray [i][j] = 0;
+			  routingTableNeighborArray[j][i] = 0;
 		  }
 	  }
 	  //printRoutingTable (COMMAND_CHANNEL);

@@ -152,6 +152,11 @@ def main():
     s.linkStateDMP(2);
     s.runTime(10);
     s.routeDMP(2);
+    
+    s.runTime(10);
+    s.linkStateDMP(5);
+    s.runTime(10);
+    s.routeDMP(5);
     '''
     s.ping(1, 2, "Hello World");
     s.runTime(10);
