@@ -190,7 +190,8 @@ implementation{	// each node's private variables must be declared here, (or it w
 			if (getBit(payloadFrom, i) == 1) {
 				arrayTo[i] = 1;
 			} else {
-				arrayTo[i] = 0;
+				//arrayTo[i] = 0;
+        // overwrites unidirectional routing
 			}
 		}
 
@@ -241,7 +242,7 @@ implementation{	// each node's private variables must be declared here, (or it w
 		makePack(&sendPackage, TOS_NODE_ID, 0, 21, PROTOCOL_LINKEDSTATE, mySeqNum, data, PACKET_MAX_PAYLOAD_SIZE);
 		//logPack(&sendPackage);
 		dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol: %hhu  Payload:\n", sendPackage.src, sendPackage.dest, sendPackage.seq, sendPackage.TTL, sendPackage.protocol);
-		
+
 		// is this an incompatible pointer type???????????
 		printLSP(sendPackage.payload, GENERAL_CHANNEL);
 
@@ -263,6 +264,10 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   for (i = 0; i < top; i++) {
 		   dbg (channel, "%hhu\n", neighbors[i]);
 	   }
+
+     dbg(channel, "\n");
+     dbg(channel, "\n");
+
    }
 
    void reply (uint16_t to) {
@@ -277,6 +282,11 @@ implementation{	// each node's private variables must be declared here, (or it w
 	   packsSent++;
 	   mySeqNum++;
 
+   }
+
+   void logPack_command(pack *input){
+   	dbg(COMMAND_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol:%hhu  Payload: %s\n",
+   	input->src, input->dest, input->seq, input->TTL, input->protocol, input->payload);
    }
 
 
@@ -298,23 +308,11 @@ implementation{	// each node's private variables must be declared here, (or it w
      uint16_t nextHop;
      int i;
      int j;
-     int saveJ;
-
-
-
-     int r;
-     int t;
-
-
-
 
          // Array to hold previous values so the path can be traced
          uint16_t prev[size];
 
-
-
          // Arrays to hold visited nodes and their boolean values
-         uint16_t visited_node[size+1];
          bool visited_bool[size+1];
          uint16_t testList[size+1][size+1];
 
@@ -323,60 +321,8 @@ implementation{	// each node's private variables must be declared here, (or it w
            {
              prev[i] = -1;
              visited_bool[i] = FALSE;
-             visited_node[i] = 0;
-
            }
 
-
-     for(r = 0; r <= size; r++)
-     {
-       for(t = 0; t <= size; t++)
-       {
-         testList[r][t] = 0;
-       }
-     }
-
-     testList[1][9] = 1;
-
-     testList[2][3] = 1;
-     testList[2][4] = 1;
-     testList[2][8] = 1;
-     testList[2][10] = 1;
-
-     testList[3][2] = 1;
-     testList[3][5] = 1;
-     testList[3][9] = 1;
-
-     testList[4][2] = 1;
-     testList[4][5] = 1;
-     testList[4][6] = 1;
-
-     testList[5][3] = 1;
-     testList[5][4] = 1;
-
-     testList[6][4] = 1;
-     testList[6][7] = 1;
-
-     testList[7][6] = 1;
-     testList[7][8] = 1;
-
-     testList[8][2] = 1;
-     testList[8][7] = 1;
-
-     testList[9][1] = 1;
-     testList[9][10] = 1;
-     testList[9][3] = 1;
-
-     testList[10][2] = 1;
-     testList[10][9] = 1;
-
-
-
-
-
-     // node 1 | TRUE
-     // node 2 | FALSE
-     // ...
 
 
     // initialize all visited table values to FALSE
@@ -408,34 +354,17 @@ implementation{	// each node's private variables must be declared here, (or it w
        visited_bool[source_index] = TRUE;
 
        call q.enqueue(TOS_NODE_ID);
-
-
-       /*dbg(GENERAL_CHANNEL, "BEFORE WHILE");*/
-
          while(!(call q.empty()))
          {
-
            v = call q.dequeue();
-           /*dbg(GENERAL_CHANNEL, "IN WHILE");*/
-
            for(i = 1; i <= size; i++)
              {
-
-               /* ERROR RECHECK: if(routing.neighborArray[i][TOS_NODE_ID] == 1)*/
                if(routingTableNeighborArray[v-1][i-1] == 1)
                  {
                      if(visited_bool[i] == FALSE)
                      {
                        visited_bool[i] = TRUE;
                        prev[i] = v;
-
-
-
-
-
-                       /*dbg(ROUTING_CHANNEL, "Prev[8] = %hhu\n", prev[8] );*/
-
-
                        call q.enqueue(i);
                      }
                  }
@@ -443,23 +372,9 @@ implementation{	// each node's private variables must be declared here, (or it w
          }
 
 
+   // Algorithm complete, now find forwarding table next values
    // Now our prev array should be complete, we need to traverse this array in order to find the shortest path and the next hop
    // prev[w] = v, w comes after v
-
-
-
-   /*dbg(ROUTING_CHANNEL, "Prev[0] = %hhu\n", prev[9] );*/
-
-
-
-   // Algorithm complete, now find forwarding table next values
-
-
-   /*for(i = 0; i < 10; i++)
-   {
-   dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", i, prev[i] );
-
-   }*/
 
 
    dbg(ROUTING_CHANNEL, "Node: %hhu's PREV table: \n",  TOS_NODE_ID );
@@ -470,39 +385,27 @@ implementation{	// each node's private variables must be declared here, (or it w
 
     }
 
-    /*prev[3] = 3;*/
-
-    // seg fault here!
    for(i = 1; i <= size; i++)
    {
      j = i;
-     /*if(j == 3)
-       j++;*/
 
-       //dbg (ROUTING_CHANNEL, "Made it to i =  %d\n", i);
-
-
+     // this loop only ends when prev[j] == 2, so j is the next hop
      while(prev[j] != TOS_NODE_ID && prev[j] < 160)
      {
-       /*dbg(ROUTING_CHANNEL, "Prev[%d] == %hhu\n", j+1, prev[j-1] );*/
        j = prev[j];
-      // dbg (ROUTING_CHANNEL, " - In\n");
-     } // this loop only ends when prev[j] == 2, so j is the next hop
+
+     }
      nextHop = j;
-     /*dbg (ROUTING_CHANNEL, "Next Hop to get to %hhu is %hhu\n", i, nextHop);*/
-
-
      forwardingTableTo[i] = i;
      if(prev[j] < 160)
       forwardingTableNext[i] = nextHop;
-     //dbg (ROUTING_CHANNEL, " - Out\n");
-
-
    }
 
    forwardingTableNext[TOS_NODE_ID] = TOS_NODE_ID;
 
    dbg(ROUTING_CHANNEL, "Node: %hhu's Forwarding table: \n",  TOS_NODE_ID );
+
+   // Print forwarding table
    for(i = 1; i <= size; i++)
    {
    dbg(ROUTING_CHANNEL, "To Node: [%hhu]   |   %hhu\n", forwardingTableTo[i], forwardingTableNext[i] );
@@ -516,28 +419,47 @@ implementation{	// each node's private variables must be declared here, (or it w
    void printRoutingTable(char channel []) {
    	int i;
    	int j;
-	
-	dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
-	
-   	dbg (channel, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
 
+
+
+	/*dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
+
+   	dbg (COMMAND_CHANNEL, "Current Routing Table: routingTableNumNodes = %hhu\n", routingTableNumNodes);
+*/
 
 
        i = 1;
-       dbg (channel, "%d  %d  %d  %d  %d  %d  %d  %d  %d  %d %d %d %d %d %d %d %d %d %d %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9, i+10, i+11, i+12, i+13, i+14, i+15, i+16, i+17, i+18, i+19, i+20);
+       dbg (channel, "   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8,i+9,i+10,i+11,i+12,i+13,i+14,i+15,i+16,i+17,i+18);
+       /*dbg (channel, "   %d  %d  %d  %d  %d  %d  %d  %d  %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8);*/
 
-   	for (i = 0; i < 20/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
-   		j = 0;
+       for (i = 0; i < 19/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+         j = 0;
 
-       if(i >= 9) {
+         if(i >= 9) {
+       //printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+       dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10],routingTableNeighborArray[i][11],routingTableNeighborArray[i][12],routingTableNeighborArray[i][13],routingTableNeighborArray[i][14],routingTableNeighborArray[i][15],routingTableNeighborArray[i][16],routingTableNeighborArray[i][17],routingTableNeighborArray[i][18],routingTableNeighborArray[i][19],routingTableNeighborArray[i][20]);
+
+     } else {
+       //printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+       dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10],routingTableNeighborArray[i][11],routingTableNeighborArray[i][12],routingTableNeighborArray[i][13],routingTableNeighborArray[i][14],routingTableNeighborArray[i][15],routingTableNeighborArray[i][16],routingTableNeighborArray[i][17],routingTableNeighborArray[i][18],routingTableNeighborArray[i][19],routingTableNeighborArray[i][20]);
+
+     }
+
+
+
+   	//for (i = 0; i < 19/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+   	//	j = 0;
+
+    //   if(i >= 9) {
 			//printf("%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
-			dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+			//dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10]);
 
-		} else {
+		//} else {
 			//printf("%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
-			dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10], routingTableNeighborArray[i][11], routingTableNeighborArray[i][12], routingTableNeighborArray[i][13], routingTableNeighborArray[i][14], routingTableNeighborArray[i][15], routingTableNeighborArray[i][16], routingTableNeighborArray[i][17], routingTableNeighborArray[i][18], routingTableNeighborArray[i][19]);
+		//	dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu\n", i+1, routingTableNeighborArray[i][0], routingTableNeighborArray[i][1], routingTableNeighborArray[i][2], routingTableNeighborArray[i][3], routingTableNeighborArray[i][4], routingTableNeighborArray[i][5], routingTableNeighborArray[i][6], routingTableNeighborArray[i][7], routingTableNeighborArray[i][8], routingTableNeighborArray[i][9], routingTableNeighborArray[i][10]);
 
-		}
+		//}
+
 
    		/*
    		for (j = 0; j < PACKET_MAX_PAYLOAD_SIZE * 8; j++) {
@@ -546,9 +468,13 @@ implementation{	// each node's private variables must be declared here, (or it w
    		*/
    	}
 
-   	dbg (channel, "Current Forwarding Table: forwardingTableNumNodes = %hhu\n", forwardingTableNumNodes);
-   	for (i = 0; i < forwardingTableNumNodes; i++) {
-   		dbg (channel, "forwardingTableTo = %hhu, forwardingTableNext = %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+    dbg (channel, "\n");
+    dbg (channel, "\n");
+
+   	dbg (channel, "Current Forwarding Table:\n");
+
+   	for (i = 1; i <= 19; i++) {
+   		dbg (channel, "To: %hhu, Next: %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
    	}
    }
 
@@ -606,7 +532,7 @@ event void Boot.booted(){
 
    event void constantTimer.fired() {
 	   updateForwardingTable(19);
-	   printRoutingTable(ROUTING_CHANNEL);
+	  // printRoutingTable(ROUTING_CHANNEL);
 
 	   routingTableNumNodes = 0;
    }
@@ -644,7 +570,7 @@ event void Boot.booted(){
 				 // record the neighbor (this packet's sender)
 				 // If this neighbor is not in neighborArray, then add it to neighborArray
 				 //found = FALSE;
-				 for (i = 0; i < top; i++) {
+				 /*for (i = 0; i < top; i++) {
 					 if (neighbors[i] == myMsg->src) {
 						 break;
 					 }
@@ -653,9 +579,9 @@ event void Boot.booted(){
 					 // record the neighbor (this packet's sender)
 					 neighbors [top] = myMsg->src;
 					 top++;
-				 }
-				 //neighbors [top] = myMsg->src;
-				 //top++;
+				 }*/
+				 neighbors [top] = myMsg->src;
+				 top++;
 				 dbg (NEIGHBOR_CHANNEL, "Recieved my own network discovery packet from node %hhu. I now have %hhu neighbors\n", myMsg->src, top);
 
 				 return msg;
@@ -667,8 +593,9 @@ event void Boot.booted(){
 					 return msg;
 				 }
 
-				 dbg (GENERAL_CHANNEL, "The message is for me!\n");
+				 dbg (COMMAND_CHANNEL, "The message is for me!\n");
 				 logPack (myMsg);
+         logPack_command (myMsg);
 				 // send reply
 				 reply(myMsg->src);
 
@@ -680,12 +607,12 @@ event void Boot.booted(){
 
 			 // check if it's another node's network discovery packet
 			 if (myMsg->src == myMsg->dest) {	// if source == destination, then it's a network discovery packet
-				 
-				 
-				 
+
+
+
 				 // If this neighbor is not in neighborArray, then add it to neighborArray
 
-				 for (i = 0; i < top; i++) {
+				 /*for (i = 0; i < top; i++) {
 					 if (neighbors[i] == myMsg->src) {
 						 break;
 					 }
@@ -696,18 +623,21 @@ event void Boot.booted(){
 					 neighbors [top] = myMsg->src;
 					 top++;
 					 //dbg (NEIGHBOR_CHANNEL, "Top: %hhu\n", top);
-				 }
-				 
+				 }*/
+
+         /*neighbors [top] = myMsg->src;
+         top++;*/
+
 				 dbg (NEIGHBOR_CHANNEL, "Recieved %hhu's neighbor discovery packet. Sending it back to them. I now have %hhu neighbors\n", myMsg->src, top);
 				 if (i >= top) {
 					 dbg (NEIGHBOR_CHANNEL, "Node %hhu is now discovered\n", myMsg->src);
 				 }
-				 
+
 				 myMsg->src = TOS_NODE_ID;	// set souce of network discovery packets to current node
 				 call Sender.send(*myMsg, myMsg->dest);	// send it back to the sender
 				 sentPacks[packsSent%50] = ((myMsg->seq << 16) | myMsg->src);	// keep track of all packs send so as not to send them twice
 				 packsSent++;
-				 
+
 				 return msg;
 			 }
 
@@ -803,6 +733,8 @@ event void Boot.booted(){
 	  //call Sender.send(sendPackage, destination);
       //call Sender.send(sendPackage, AM_BROADCAST_ADDR); // AM_BROADCAST_ADDR is only used for neighbor discovery and Link State Packets
 	  call Sender.send(sendPackage, forwardingTableNext[destination]);
+
+    printRoutingTable(COMMAND_CHANNEL);
 	  mySeqNum++;
 	  packsSent++;
    }
@@ -812,9 +744,9 @@ event void Boot.booted(){
    }
 
    event void CommandHandler.printRouteTable(){
-		//printRoutingTable(COMMAND_CHANNEL);
+		printRoutingTable(COMMAND_CHANNEL);
 		//printRoutingTable (COMMAND_CHANNEL);
-		dbg (COMMAND_CHANNEL, "Command Handler has printed routing table on command channel?\n");
+		//dbg (COMMAND_CHANNEL, "Command Handler has printed routing table on command channel?\n");
    }
 
    event void CommandHandler.printLinkState(){
@@ -824,7 +756,7 @@ event void Boot.booted(){
 	   printLSP(dummyLSP, COMMAND_CHANNEL);
 	   dbg (COMMAND_CHANNEL, "Source: %hhu\n", TOS_NODE_ID);
 	   printNeighbors (COMMAND_CHANNEL);
-	   
+
    }
 
    event void CommandHandler.printDistanceVector(){}
