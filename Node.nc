@@ -315,23 +315,23 @@ implementation{ // each node's private variables must be declared here, (or it w
      // Stores all visited vertices
      bool visited[size+1];
 
-     // Stores shortest distance from source
-     int distance[size+1];
+     // Stores cost from the source to any node cost[i]
+     int cost[size+1];
 
      // Stores previous vertex
      uint16_t prev[size+1];
 
-     // Set all distances to infinity, no previous vertex
+     // Set all costs to infinity, no previous vertices visited
      for(i = 1; i <= size; i++)
      {
-       /*distance[i] = INFINITY;*/
-       distance[i] = 99999999999999;
+       /*cost[i] = INFINITY;*/
+       cost[i] = 99999999999999;
        prev[i] = 0;
        visited[i] = FALSE;
      }
 
-     // Distance from source to source is 0
-     distance[TOS_NODE_ID] = 0;
+     // Cost from source to source is 0
+     cost[TOS_NODE_ID] = 0;
 
      // We don't have a node 0, so count it as visited and ignore
      visited[0] = TRUE;
@@ -340,28 +340,28 @@ implementation{ // each node's private variables must be declared here, (or it w
      while(anyUnvisited(visited, size) == TRUE)
      {
 
-       // find the first unvisited node, store distance as min
+       // find the first unvisited node, store cost as min
        for(i = 1; i <= size; i++)
        {
          if(visited[i] == FALSE)
          {
-           min = distance[i];
+           min = cost[i];
            v = i;
            break;
          }
        }
 
-       // look through the rest of the unvisited nodes, find real min distance and choose that vertex
+       // look through the rest of the unvisited nodes, find real min cost and choose that vertex
        for(i = 1; i <= size; i++)
        {
-         if(visited[i] == FALSE && distance[i] < min)
+         if(visited[i] == FALSE && cost[i] < min)
          {
-           min = distance[i];
+           min = cost[i];
            v = i;
          }
        }
 
-       // We now have a current vertex selected, add all of its unvisited neighbors to queue to examine distances
+       // We now have a current vertex selected, add all of its unvisited neighbors to queue to examine costs
        for(i = 1; i <= size; i++)
        {
          if(routingTableNeighborArray[v-1][i-1] == 1)
@@ -371,14 +371,14 @@ implementation{ // each node's private variables must be declared here, (or it w
        }
 
 
-       // While the Queue is not empty, look at each neighbor and update the distance if a shorter path is found
+       // While the Queue is not empty, look at each neighbor and update the cost if a shorter path is found
        while(!(call q.empty()))
       {
         current_neighbor = call q.dequeue();
 
-        if(distance[v] + 1 < distance[current_neighbor])
+        if(cost[v] + 1 < cost[current_neighbor])
         {
-          distance[current_neighbor] = distance[v] + 1;
+          cost[current_neighbor] = cost[v] + 1;
           prev[current_neighbor] = v;
         }
       }
@@ -429,9 +429,9 @@ implementation{ // each node's private variables must be declared here, (or it w
          j = 0;
 
         if(i >= 9) {
-      dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[0][i], routingTableNeighborArray[1][i], routingTableNeighborArray[2][i], routingTableNeighborArray[3][i], routingTableNeighborArray[4][i], routingTableNeighborArray[5][i], routingTableNeighborArray[6][i], routingTableNeighborArray[7][i], routingTableNeighborArray[8][i], routingTableNeighborArray[9][i], routingTableNeighborArray[10][i],routingTableNeighborArray[11][i],routingTableNeighborArray[12][i],routingTableNeighborArray[13][i],routingTableNeighborArray[14][i],routingTableNeighborArray[15][i],routingTableNeighborArray[16][i],routingTableNeighborArray[17][i],routingTableNeighborArray[18][i],routingTableNeighborArray[19][i],routingTableNeighborArray[20][i]);
+      dbg (channel, "%d %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[0][i], routingTableNeighborArray[1][i], routingTableNeighborArray[2][i], routingTableNeighborArray[3][i], routingTableNeighborArray[4][i], routingTableNeighborArray[5][i], routingTableNeighborArray[6][i], routingTableNeighborArray[7][i], routingTableNeighborArray[8][i], routingTableNeighborArray[9][i], routingTableNeighborArray[10][i],routingTableNeighborArray[11][i],routingTableNeighborArray[12][i],routingTableNeighborArray[13][i],routingTableNeighborArray[14][i],routingTableNeighborArray[15][i],routingTableNeighborArray[16][i],routingTableNeighborArray[17][i],routingTableNeighborArray[18][i],routingTableNeighborArray[19][i],routingTableNeighborArray[20][i]);
     } else {
-      dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[0][i], routingTableNeighborArray[1][i], routingTableNeighborArray[2][i], routingTableNeighborArray[3][i], routingTableNeighborArray[4][i], routingTableNeighborArray[5][i], routingTableNeighborArray[6][i], routingTableNeighborArray[7][i], routingTableNeighborArray[8][i], routingTableNeighborArray[9][i], routingTableNeighborArray[10][i],routingTableNeighborArray[11][i],routingTableNeighborArray[12][i],routingTableNeighborArray[13][i],routingTableNeighborArray[14][i],routingTableNeighborArray[15][i],routingTableNeighborArray[16][i],routingTableNeighborArray[17][i],routingTableNeighborArray[18][i],routingTableNeighborArray[19][i],routingTableNeighborArray[20][i]);
+      dbg (channel, "%d  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu  %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu   %hhu\n", i+1, routingTableNeighborArray[0][i], routingTableNeighborArray[1][i], routingTableNeighborArray[2][i], routingTableNeighborArray[3][i], routingTableNeighborArray[4][i], routingTableNeighborArray[5][i], routingTableNeighborArray[6][i], routingTableNeighborArray[7][i], routingTableNeighborArray[8][i], routingTableNeighborArray[9][i], routingTableNeighborArray[10][i],routingTableNeighborArray[11][i],routingTableNeighborArray[12][i],routingTableNeighborArray[13][i],routingTableNeighborArray[14][i],routingTableNeighborArray[15][i],routingTableNeighborArray[16][i],routingTableNeighborArray[17][i],routingTableNeighborArray[18][i],routingTableNeighborArray[19][i],routingTableNeighborArray[20][i]);
     }
     }
 
