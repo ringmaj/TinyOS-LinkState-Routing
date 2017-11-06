@@ -369,7 +369,7 @@ implementation{ // each node's private variables must be declared here, (or it w
        // We now have a current vertex selected, add all of its unvisited neighbors to queue to examine costs
        for(i = 1; i <= size; i++)
        {
-         if(routingTableNeighborArray[v-1][i-1] == 1)
+         if(routingTableNeighborArray[i-1][v-1] == 1)
          {
            call q.enqueue(i);
          }
@@ -393,6 +393,8 @@ implementation{ // each node's private variables must be declared here, (or it w
      }
 
 
+     /*for(i = 1; i <= size; i++)
+      dbg (COMMAND_CHANNEL, "Prev[%d] = %hhu\n", i, prev[i]);*/
 
      // Traverse the previous visited list in order to find next hop
      for(i = 1; i <= size; i++)
@@ -405,7 +407,11 @@ implementation{ // each node's private variables must be declared here, (or it w
 
        }
 
-       nextHop = j;
+       if(prev[j] == 0)
+          nextHop = 0;
+       else
+          nextHop = j;
+
        forwardingTableTo[i] = i;
        forwardingTableNext[i] = nextHop;
      }
@@ -420,7 +426,7 @@ implementation{ // each node's private variables must be declared here, (or it w
    void printRoutingTable(char channel []) {
   int i;
   int j;
-  
+
   /*
   dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
 
