@@ -33,6 +33,7 @@ What I specify:
 protocol == 6 : Neighbor discovery packet
 
 */
+int totalNumNodes @C();
 
 module Node{
    uses interface Boot;
@@ -47,6 +48,7 @@ module Node{
    uses interface CommandHandler;
    uses interface Queue<uint16_t> as q;
 
+
 }
 
 
@@ -58,8 +60,11 @@ module Node{
  */
 
 
+
 implementation{ // each node's private variables must be declared here, (or it will only be declared once for all nodes, so they all share the same variable)
    pack sendPackage;
+
+
 
 
    // Holds current nodes understanding of entire network topology
@@ -415,6 +420,7 @@ implementation{ // each node's private variables must be declared here, (or it w
    void printRoutingTable(char channel []) {
   int i;
   int j;
+  
   /*
   dbg (COMMAND_CHANNEL, "void printRoutingTable(char channel [])  is printing from channel: %s\n", channel);
 
@@ -425,7 +431,7 @@ implementation{ // each node's private variables must be declared here, (or it w
     i = 1;
     dbg (channel, "   %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d\n", i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8,i+9,i+10,i+11,i+12,i+13,i+14,i+15,i+16,i+17,i+18);
 
-    for (i = 0; i < 19/*PACKET_MAX_PAYLOAD_SIZE * 8*/; i++) {
+    for (i = 0; i <= totalNumNodes; i++) {
          j = 0;
 
         if(i >= 9) {
@@ -440,7 +446,7 @@ implementation{ // each node's private variables must be declared here, (or it w
 
     dbg (channel, "Current Forwarding Table:\n");
 
-    for (i = 1; i <= 19; i++) {
+    for (i = 1; i <= totalNumNodes; i++) {
       dbg (channel, "To: %hhu, Next: %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
     }
    }
@@ -451,6 +457,11 @@ implementation{ // each node's private variables must be declared here, (or it w
 event void Boot.booted(){
     int i;
     int j;
+
+    totalNumNodes++;
+    dbg(GENERAL_CHANNEL, "NUM NODES: %d\n", totalNumNodes);
+
+
     routingTableNumNodes = 0;
       call AMControl.start();
     call periodicTimer.startPeriodic(200000);
@@ -498,7 +509,7 @@ event void Boot.booted(){
    }
 
    event void constantTimer.fired() {
-     updateForwardingTable(19);
+     updateForwardingTable(totalNumNodes);
     // printRoutingTable(ROUTING_CHANNEL);
 
      routingTableNumNodes = 0;
@@ -716,6 +727,7 @@ event void Boot.booted(){
 
    event void CommandHandler.printRouteTable(){
     printRoutingTable(COMMAND_CHANNEL);
+    //dbg(COMMAND_CHANNEL, "NUM NODES: %d\n", totalNumNodes);
     //printRoutingTable (COMMAND_CHANNEL);
     //dbg (COMMAND_CHANNEL, "Command Handler has printed routing table on command channel?\n");
    }
