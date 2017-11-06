@@ -453,7 +453,10 @@ implementation{ // each node's private variables must be declared here, (or it w
     dbg (channel, "Current Forwarding Table:\n");
 
     for (i = 1; i <= totalNumNodes; i++) {
-      dbg (channel, "To: %hhu, Next: %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+      if( forwardingTableNext[i] != 0)
+          dbg (channel, "To: %hhu, Next: %hhu\n", forwardingTableTo[i], forwardingTableNext[i]);
+      else
+      dbg (channel, "To: %hhu, Next: %s\n", forwardingTableTo[i], "no path");
     }
    }
 
